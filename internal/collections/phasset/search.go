@@ -27,7 +27,7 @@ func GetLessFunc(sortBy, sortOrder string) search.LessFunction[*PHAsset] {
 	return fn
 }
 
-func BuildPHAssetSearchCriteria(with *SearchOptions) search.SearchCriteria[*PHAsset] {
+func BuildPHAssetCriteria(with *SearchOptions) search.Criteria[*PHAsset] {
 
 	return func(c *PHAsset) bool {
 
@@ -114,7 +114,7 @@ func BuildPHAssetSearchCriteria(with *SearchOptions) search.SearchCriteria[*PHAs
 func Search(chats []*PHAsset, with *SearchOptions) []*PHAsset {
 
 	// Build criteria
-	criteria := BuildPHAssetSearchCriteria(with)
+	criteria := BuildPHAssetCriteria(with)
 
 	// Execute search_manager
 	results := search.Search(chats, criteria)

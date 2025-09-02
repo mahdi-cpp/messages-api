@@ -1,0 +1,11 @@
+{
+  "project_title": "photos-api",
+  "goal": "photos api is cloud storage similar apple cloud. it connect to Android and ios application",
+  "specific_problem": "best create thumbnail libraries",
+  "libraries_to_use": [
+    "offer me"
+  ],
+  "consider_external_libraries": true,
+  "existing_code": "",
+  "expected_output": ""
+}
