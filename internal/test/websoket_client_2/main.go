@@ -20,11 +20,11 @@ type Message struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
-// Define your user information
-var userID = "userid_12"
-var username = "mahdi.cpp"
-
 func main() {
+
+	// Define your user information
+	userID := "userid_2"
+	username := "parsa"
 
 	// Construct the URL with query parameters
 	u := url.URL{
@@ -65,16 +65,19 @@ func main() {
 			log.Printf("Received: %s", message)
 		}
 	}()
+
 	sendJoinRoom(c, "friends_chat")
 	sendJoinRoom(c, "family_chat")
 
-	select {}
+	// Send an initial message to the server.
+	sendMessage(c, userID, username, "Hello my family", "family_chat")
 
-	//// Create a channel to listen for interrupt signals (like Ctrl+C).
+	select {}
+	// Create a channel to listen for interrupt signals (like Ctrl+C).
 	//interrupt := make(chan os.Signal, 1)
 	//signal.Notify(interrupt, os.Interrupt)
-	//
-	//// Main loop to keep the program running until an interrupt signal is received.
+
+	// Main loop to keep the program running until an interrupt signal is received.
 	//for {
 	//	select {
 	//	case <-done:
@@ -94,7 +97,6 @@ func main() {
 	//		return
 	//	}
 	//}
-
 }
 
 type JoinRoom struct {

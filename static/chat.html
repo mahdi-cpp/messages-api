@@ -211,6 +211,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+
         const chatMessages = document.getElementById('chat-messages');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
@@ -237,6 +238,10 @@
         connectWebSocket();
 
         function connectWebSocket() {
+
+            // Replace the simulated connection with a real WebSocket object
+            ws = new WebSocket('ws://localhost:8099');
+
             // In a real application, you would connect to your WebSocket server
             console.log('Connecting to WebSocket server...');
 
@@ -479,7 +484,9 @@
                 .replace(/^-+/, '')             // Trim - from start of text
                 .replace(/-+$/, '');            // Trim - from end of text
         }
+
     });
+
 </script>
 </body>
 </html>

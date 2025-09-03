@@ -25,17 +25,28 @@ type Hub struct {
 
 // NewHub creates a new Hub instance
 func NewHub() *Hub {
-	return &Hub{
+	hub := &Hub{
 		rooms:     make(map[string]*Room),
 		clients:   make(map[string]*Client),
 		startTime: time.Now(),
 	}
+
+	// Create default room
+	hub.CreateRoom("general", "General Chat")
+
+	return hub
 }
 
 // Run starts the hub (maintain for compatibility)
 func (h *Hub) Run() {
 	log.Println("Hub started and running")
 	// This method can be used for background tasks if needed
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		h.CleanupInactiveRooms()
+	}
 }
 
 // RegisterClient adds a client to the hub
@@ -44,7 +55,7 @@ func (h *Hub) RegisterClient(client *Client) {
 	defer h.mutex.Unlock()
 
 	h.clients[client.userID] = client
-	log.Printf("Client registered: %s", client.userID)
+	log.Printf("Client registered: %s. Total clients: %d", client.userID, len(h.clients))
 }
 
 // UnregisterClient removes a client from the hub and all rooms
@@ -62,14 +73,54 @@ func (h *Hub) UnregisterClient(client *Client) {
 
 	// Remove client from main clients map
 	delete(h.clients, client.userID)
-	log.Printf("Client unregistered: %s", client.userID)
+	log.Printf("Client unregistered: %s. Remaining clients: %d", client.userID, len(h.clients))
 }
 
-// GetClientCount returns the number of connected clients
-func (h *Hub) GetClientCount() int {
-	h.mutex.RLock()
-	defer h.mutex.RUnlock()
-	return len(h.clients)
+// LeaveRoom removes a client from a specific room
+func (h *Hub) LeaveRoom(roomID, userID string) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
+	if room, exists := h.rooms[roomID]; exists {
+		if _, clientExists := room.Clients[userID]; clientExists {
+			delete(room.Clients, userID)
+			log.Printf("User %s left room %s. Users remaining: %d", userID, roomID, len(room.Clients))
+
+			// Also remove from client's room list
+			if client, clientExists := h.clients[userID]; clientExists {
+				client.LeaveRoom(roomID)
+			}
+		} else {
+			log.Printf("User %s not found in room %s", userID, roomID)
+		}
+	} else {
+		log.Printf("Room %s not found", roomID)
+	}
+}
+
+// JoinRoom adds a client to a room
+func (h *Hub) JoinRoom(roomID, userID string, client *Client) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
+	// Ensure room exists
+	if _, exists := h.rooms[roomID]; !exists {
+		log.Printf("Room %s does not exist, creating it", roomID)
+		h.rooms[roomID] = &Room{
+			ID:        roomID,
+			Name:      roomID, // Use ID as name for auto-created rooms
+			Clients:   make(map[string]*Client),
+			CreatedAt: time.Now(),
+		}
+	}
+
+	room := h.rooms[roomID]
+
+	// Add client to the room
+	room.Clients[userID] = client
+	client.JoinRoom(roomID)
+
+	log.Printf("User %s joined room %s (Total in room: %d)", userID, roomID, len(room.Clients))
 }
 
 // CreateRoom creates a new chat room
@@ -84,30 +135,7 @@ func (h *Hub) CreateRoom(roomID, roomName string) {
 			Clients:   make(map[string]*Client),
 			CreatedAt: time.Now(),
 		}
-		log.Printf("Room created: %s (%s)", roomName, roomID)
-	}
-}
-
-// JoinRoom adds a client to a room
-func (h *Hub) JoinRoom(roomID, userID string, client *Client) {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
-
-	if room, exists := h.rooms[roomID]; exists {
-		room.Clients[userID] = client
-		client.JoinRoom(roomID)
-		log.Printf("User %s joined room %s", userID, roomID)
-	}
-}
-
-// LeaveRoom removes a client from a room
-func (h *Hub) LeaveRoom(roomID, userID string) {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
-
-	if room, exists := h.rooms[roomID]; exists {
-		delete(room.Clients, userID)
-		log.Printf("User %s left room %s", userID, roomID)
+		log.Printf("Room created: %s (%s). Total rooms: %d", roomName, roomID, len(h.rooms))
 	}
 }
 
@@ -125,17 +153,18 @@ func (h *Hub) BroadcastToRoom(roomID string, message interface{}) {
 
 	if room, exists := h.rooms[roomID]; exists {
 		for userID, client := range room.Clients {
+			// Check if client is still connected and channel is not full
 			select {
 			case client.send <- messageBytes:
 				// Message sent successfully
+				log.Printf("Message sent to user %s in room %s", userID, roomID)
 			default:
 				// Channel is full, client might be disconnected
-				log.Printf("Client %s send buffer full, disconnecting", userID)
-				close(client.send)
-				delete(room.Clients, userID)
-				delete(h.clients, userID)
+				log.Printf("Client %s send buffer full, potentially disconnected", userID)
 			}
 		}
+	} else {
+		log.Printf("Room %s not found for broadcasting", roomID)
 	}
 }
 
@@ -166,6 +195,13 @@ func (h *Hub) GetRoomUsers(roomID string) []string {
 	return []string{}
 }
 
+// GetClientCount returns the number of connected clients
+func (h *Hub) GetClientCount() int {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+	return len(h.clients)
+}
+
 // GetRoomStats returns statistics for all rooms
 func (h *Hub) GetRoomStats() map[string]interface{} {
 	h.mutex.RLock()
@@ -177,7 +213,6 @@ func (h *Hub) GetRoomStats() map[string]interface{} {
 			"name":       room.Name,
 			"user_count": len(room.Clients),
 			"created_at": room.CreatedAt,
-			"age":        time.Since(room.CreatedAt).String(),
 		}
 	}
 	return stats
@@ -188,7 +223,21 @@ func (h *Hub) GetStartTime() time.Time {
 	return h.startTime
 }
 
-// GetRoom returns a room by ID (thread-safe)
+// GetHubStats returns comprehensive hub statistics
+func (h *Hub) GetHubStats() map[string]interface{} {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+
+	return map[string]interface{}{
+		"total_clients": len(h.clients),
+		"total_rooms":   len(h.rooms),
+		"uptime":        time.Since(h.startTime).String(),
+		"start_time":    h.startTime,
+		"room_stats":    h.GetRoomStats(),
+	}
+}
+
+// GetRoom returns a room by ID
 func (h *Hub) GetRoom(roomID string) (*Room, bool) {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
@@ -231,10 +280,7 @@ func (h *Hub) BroadcastToAll(message interface{}) {
 		case client.send <- messageBytes:
 			// Message sent successfully
 		default:
-			// Channel is full, client might be disconnected
-			log.Printf("Client %s send buffer full, disconnecting", userID)
-			close(client.send)
-			delete(h.clients, userID)
+			log.Printf("Client %s send buffer full", userID)
 		}
 	}
 }
@@ -252,16 +298,41 @@ func (h *Hub) CleanupInactiveRooms() {
 	}
 }
 
-// GetHubStats returns comprehensive hub statistics
-func (h *Hub) GetHubStats() map[string]interface{} {
+// RemoveUserFromAllRooms removes a user from all rooms
+func (h *Hub) RemoveUserFromAllRooms(userID string) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
+	for roomID, room := range h.rooms {
+		if _, exists := room.Clients[userID]; exists {
+			delete(room.Clients, userID)
+			log.Printf("User %s removed from room %s", userID, roomID)
+		}
+	}
+}
+
+// GetUserRooms returns all rooms a user is in
+func (h *Hub) GetUserRooms(userID string) []string {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
-	return map[string]interface{}{
-		"total_clients": len(h.clients),
-		"total_rooms":   len(h.rooms),
-		"uptime":        time.Since(h.startTime).String(),
-		"start_time":    h.startTime,
-		"room_stats":    h.GetRoomStats(),
+	var userRooms []string
+	for roomID, room := range h.rooms {
+		if _, exists := room.Clients[userID]; exists {
+			userRooms = append(userRooms, roomID)
+		}
 	}
+	return userRooms
+}
+
+// IsUserInRoom checks if a user is in a specific room
+func (h *Hub) IsUserInRoom(userID, roomID string) bool {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+
+	if room, exists := h.rooms[roomID]; exists {
+		_, userExists := room.Clients[userID]
+		return userExists
+	}
+	return false
 }

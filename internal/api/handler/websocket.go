@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -33,10 +34,8 @@ func NewWebSocketHandler(hub *hub.Hub) *WebSocketHandler {
 
 // ServeHTTP handles HTTP requests and upgrades them to WebSocket
 func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
 	userID := r.URL.Query().Get("user_id")
 	if userID == "" {
-		fmt.Println("User ID required")
 		http.Error(w, "User ID required", http.StatusUnauthorized)
 		return
 	}
@@ -58,9 +57,13 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	client := hub.NewClient(h.hub, conn, userID)
 	h.hub.RegisterClient(client)
 
+	// Set user info in client (you'll need to add this field to Client struct)
+	client.SetUserInfo(username)
+
 	go client.WritePump()
 	go client.ReadPump()
 
+	// Send welcome message only to this client
 	welcomeMessage := map[string]interface{}{
 		"type":    "system",
 		"message": "Welcome to the chat!",
@@ -72,19 +75,132 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Failed to send welcome message to user %s: %v", userID, err)
 	}
 
-	h.notifyUserJoined(userID, username)
+	// Notify all users in default room about new user
+	h.notifyUserJoined(userID, username, "general")
 }
 
-// notifyUserJoined sends a notification when a user joins
-func (h *WebSocketHandler) notifyUserJoined(userID, username string) {
+// notifyUserJoined sends a notification when a user joins a room
+func (h *WebSocketHandler) notifyUserJoined(userID, username, roomID string) {
 	joinMessage := map[string]interface{}{
-		"type":     "user_joined",
-		"userId":   userID,
-		"username": username,
-		"message":  username + " joined the chat",
+		"type":      "user_joined",
+		"userId":    userID,
+		"username":  username,
+		"message":   username + " joined the room",
+		"roomId":    roomID,
+		"timestamp": time.Now(),
 	}
 
-	h.hub.BroadcastToRoom("general", joinMessage)
+	// Broadcast to the specific room
+	h.hub.BroadcastToRoom(roomID, joinMessage)
+}
+
+// Handle incoming messages from clients
+func (h *WebSocketHandler) handleClientMessage(client *hub.Client, rawMessage []byte) {
+	var message struct {
+		Type    string `json:"type"`
+		Content string `json:"content"`
+		ChatID  string `json:"chatId"`
+	}
+
+	if err := json.Unmarshal(rawMessage, &message); err != nil {
+		log.Printf("Error parsing message from client %s: %v", client.UserID(), err)
+		return
+	}
+
+	switch message.Type {
+	case "message":
+		h.handleChatMessage(client, message.Content, message.ChatID)
+	case "typing":
+		h.handleTypingIndicator(client, message.Content, message.ChatID)
+	case "join_room":
+		h.handleJoinRoom(client, message.ChatID)
+	case "leave_room":
+		h.handleLeaveRoom(client, message.ChatID)
+	case "create_room":
+		h.handleCreateRoom(client, message.Content)
+	}
+}
+
+// handleChatMessage processes and broadcasts chat messages
+func (h *WebSocketHandler) handleChatMessage(client *hub.Client, content, roomID string) {
+	if content == "" {
+		return
+	}
+
+	// Create the message to broadcast
+	chatMessage := map[string]interface{}{
+		"type":      "message",
+		"id":        generateMessageID(),
+		"userId":    client.UserID(),
+		"username":  client.Username(),
+		"content":   content,
+		"roomId":    roomID,
+		"timestamp": time.Now(),
+	}
+
+	log.Printf("Broadcasting message from %s in room %s: %s",
+		client.Username(), roomID, content)
+
+	// Broadcast to all clients in the room
+	h.hub.BroadcastToRoom(roomID, chatMessage)
+}
+
+// handleTypingIndicator broadcasts typing status
+func (h *WebSocketHandler) handleTypingIndicator(client *hub.Client, typing, roomID string) {
+	typingMessage := map[string]interface{}{
+		"type":      "typing",
+		"userId":    client.UserID(),
+		"username":  client.Username(),
+		"roomId":    roomID,
+		"typing":    typing == "true",
+		"timestamp": time.Now(),
+	}
+
+	h.hub.BroadcastToRoom(roomID, typingMessage)
+}
+
+// handleJoinRoom handles room joining
+func (h *WebSocketHandler) handleJoinRoom(client *hub.Client, roomID string) {
+	h.hub.JoinRoom(roomID, client.UserID(), client)
+
+	// Notify room about new user
+	h.notifyUserJoined(client.UserID(), client.Username(), roomID)
+}
+
+// handleLeaveRoom handles room leaving
+func (h *WebSocketHandler) handleLeaveRoom(client *hub.Client, roomID string) {
+
+	h.hub.LeaveRoom(roomID, client.UserID())
+
+	leaveMessage := map[string]interface{}{
+		"type":      "user_left",
+		"userId":    client.UserID(),
+		"username":  client.Username(),
+		"message":   client.Username() + " left the room",
+		"roomId":    roomID,
+		"timestamp": time.Now(),
+	}
+
+	h.hub.BroadcastToRoom(roomID, leaveMessage)
+}
+
+// handleCreateRoom handles room creation
+func (h *WebSocketHandler) handleCreateRoom(client *hub.Client, roomName string) {
+	roomID := generateRoomID(roomName)
+	h.hub.CreateRoom(roomID, roomName)
+	h.hub.JoinRoom(roomID, client.UserID(), client)
+
+	// Notify about room creation
+	roomMessage := map[string]interface{}{
+		"type":      "room_created",
+		"roomId":    roomID,
+		"roomName":  roomName,
+		"userId":    client.UserID(),
+		"username":  client.Username(),
+		"timestamp": time.Now(),
+	}
+
+	h.hub.BroadcastToAll(roomMessage)
 }
 
 // ServeWs is the legacy function for backward compatibility
@@ -93,23 +209,12 @@ func ServeWs(hub *hub.Hub, w http.ResponseWriter, r *http.Request) {
 	handler.ServeHTTP(w, r)
 }
 
-// HealthCheckHandler handles WebSocket connection health checks
-func HealthCheckHandler(hub *hub.Hub, w http.ResponseWriter, r *http.Request) {
-	response := map[string]interface{}{
-		"status":    "healthy",
-		"clients":   hub.GetClientCount(),
-		"rooms":     len(hub.GetRoomList()),
-		"timestamp": time.Now().Unix(),
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+// Helper functions
+func generateMessageID() string {
+	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
 
-// GetConnectionsHandler returns current connection statistics
-func GetConnectionsHandler(hub *hub.Hub, w http.ResponseWriter, r *http.Request) {
-	stats := hub.GetHubStats() // Use the new method
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(stats)
+func generateRoomID(name string) string {
+	// Simple implementation - convert to lowercase and replace spaces
+	return strings.ToLower(strings.ReplaceAll(name, " ", "_"))
 }

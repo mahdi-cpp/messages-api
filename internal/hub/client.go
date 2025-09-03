@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -13,11 +14,13 @@ import (
 
 // Client represents a connected user
 type Client struct {
-	hub    *Hub
-	conn   *websocket.Conn
-	userID string
-	send   chan []byte
-	rooms  map[string]bool // Track which rooms the user is in
+	hub      *Hub
+	conn     *websocket.Conn
+	userID   string
+	username string
+	send     chan []byte
+	rooms    map[string]bool // Track which rooms the user is in
+	mutex    sync.RWMutex
 }
 
 // NewClient creates a new client instance
@@ -66,7 +69,7 @@ func (c *Client) ReadPump() {
 	}()
 
 	// Configure connection settings
-	c.conn.SetReadLimit(512) // Max message size in bytes
+	c.conn.SetReadLimit(10 * 1024) // Max message size 10KB in bytes
 	c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	c.conn.SetPongHandler(func(string) error {
 		c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
@@ -136,6 +139,9 @@ func (c *Client) WritePump() {
 // handleMessage processes different types of incoming messages
 func (c *Client) handleMessage(rawMessage []byte) {
 
+	// Instead of handling messages here, forward them to the hub/handler
+	// This ensures consistent message processing
+
 	var baseMessage struct {
 		Type string `json:"type"`
 	}
@@ -145,25 +151,39 @@ func (c *Client) handleMessage(rawMessage []byte) {
 		return
 	}
 
-	switch baseMessage.Type {
-	case "typing":
-		c.handleTypingMessage(rawMessage)
-	case "message":
-		fmt.Println("new message......")
-		c.handleChatMessage(rawMessage)
-	case "join_room":
-		c.handleJoinRoom(rawMessage)
-	case "leave_room":
-		c.handleLeaveRoom(rawMessage)
-	case "create_room":
-		c.handleCreateRoom(rawMessage)
-	case "get_rooms":
-		c.handleGetRooms()
-	case "get_room_users":
-		c.handleGetRoomUsers(rawMessage)
-	default:
-		log.Printf("Unknown message type from client %s: %s", c.userID, baseMessage.Type)
-	}
+	// For now, just log the message - the actual handling should be in the WebSocketHandler
+	log.Printf("Received message from client %s: %s", c.userID, string(rawMessage))
+
+	// In a real implementation, you would forward this to the WebSocketHandler
+	// c.hub.HandleClientMessage(c, rawMessage)
+
+	//var baseMessage struct {
+	//	Type string `json:"type"`
+	//}
+	//
+	//if err := json.Unmarshal(rawMessage, &baseMessage); err != nil {
+	//	log.Printf("Error parsing message from client %s: %v", c.userID, err)
+	//	return
+	//}
+	//
+	//switch baseMessage.Type {
+	//case "typing":
+	//	c.handleTypingMessage(rawMessage)
+	//case "message":
+	//	c.handleChatMessage(rawMessage)
+	//case "join_room":
+	//	c.handleJoinRoom(rawMessage)
+	//case "leave_room":
+	//	c.handleLeaveRoom(rawMessage)
+	//case "create_room":
+	//	c.handleCreateRoom(rawMessage)
+	//case "get_rooms":
+	//	c.handleGetRooms()
+	//case "get_room_users":
+	//	c.handleGetRoomUsers(rawMessage)
+	//default:
+	//	log.Printf("Unknown message type from client %s: %s", c.userID, baseMessage.Type)
+	//}
 }
 
 // handleTypingMessage processes typing indicators
@@ -189,6 +209,7 @@ func (c *Client) handleTypingMessage(rawMessage []byte) {
 
 // handleChatMessage processes chat messages
 func (c *Client) handleChatMessage(rawMessage []byte) {
+
 	var message struct {
 		Content string `json:"content"`
 		ChatID  string `json:"chatId"`
@@ -217,6 +238,7 @@ func (c *Client) handleChatMessage(rawMessage []byte) {
 
 // handleJoinRoom processes room join requests
 func (c *Client) handleJoinRoom(rawMessage []byte) {
+
 	var joinRequest struct {
 		RoomID string `json:"roomId"`
 	}
@@ -255,7 +277,7 @@ func (c *Client) handleLeaveRoom(rawMessage []byte) {
 	}
 
 	// Leave the room through the hub
-	c.hub.LeaveRoom(leaveRequest.RoomID, c.userID)
+	//c.hub.LeaveRoom(leaveRequest.RoomID, c.userID)
 
 	// Send confirmation to client
 	confirmation := map[string]interface{}{
@@ -273,6 +295,7 @@ func (c *Client) handleLeaveRoom(rawMessage []byte) {
 
 // handleCreateRoom processes room creation requests
 func (c *Client) handleCreateRoom(rawMessage []byte) {
+
 	var createRequest struct {
 		RoomID   string `json:"roomId"`
 		RoomName string `json:"roomName"`
@@ -375,7 +398,26 @@ func generateUUID() string {
 	return fmt.Sprintf("%d-%d", time.Now().UnixNano(), rand.Int63())
 }
 
-// Custom errors
+// ErrClientSendBufferFull Custom errors
 var (
 	ErrClientSendBufferFull = errors.New("client send buffer is full")
 )
+
+// Username returns the client's username
+func (c *Client) Username() string {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+	return c.username
+}
+
+// UserID returns the client's user ID
+func (c *Client) UserID() string {
+	return c.userID
+}
+
+// SetUserInfo sets the username for the client
+func (c *Client) SetUserInfo(username string) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.username = username
+}
