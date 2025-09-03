@@ -1,11 +1,18 @@
+
 {
-  "project_title": "photos-api",
-  "goal": "photos api is cloud storage similar apple cloud. it connect to Android and ios application",
-  "specific_problem": "best create thumbnail libraries",
-  "libraries_to_use": [
-    "offer me"
-  ],
-  "consider_external_libraries": true,
-  "existing_code": "",
-  "expected_output": ""
+  "project_title": "chat-api",
+
+  "description1": "application manager first load all chat metadata in chats field",
+
+  "description2" : "all models use uuid_v7 for id, userID, chatID, messageID, users, chats, messages, and other ",
+  "description3" : "users are mange by other service",
+  "description4" :"alle metadata are json format and save by id in  separate file. for example chat1.json, chat2.json",
+  "description5" :"for any chat we have a directory for assets and metadata. for example chat_1/metadata,messages/message1.json, chat_1metadata,messages/message2.json, chat_2/metadata/messages/message1.json",
+
+  "goal1": "update chat application manager. with gorilla websocket. for chat communication.",
+  "goal2": "for example any time a user is typing, websocket send for all members in chat this status",
+  "goal3": "for example any time a user send message, websocket send for all online members in chat this status",
+
+  "chat model": "type Chat struct {\n\tID                    string          `json:\"id\"`\n\tType                  string          `json:\"type\"` // \"private\", \"group\", \"channel\", \"supergroup\"\n\tTitle                 string          `json:\"title\"`\n\tUsername              string          `json:\"username\"` // Unique identifier for public channels/groups\n\tDescription           string          `json:\"description\"`\n\tAvatar                string          `json:\"avatar\"`                // Chat profile photo\n\tPinnedMessageId       int             `json:\"pinnedMessageId\"`       // ID of pinned message\n\tMessageAutoDeleteTime int             `json:\"messageAutoDeleteTime\"` // Auto-delete timer\n\tPermissions           Permissions     `json:\"permissions\"`           // Default chat permissions\n\tSlowModeDelay         int             `json:\"slowModeDelay\"`         // Slow mode delay in seconds\n\tStickerSetName        string          `json:\"stickerSetName\"`        // Name of group sticker set\n\tCanSetStickerSet      bool            `json:\"canSetStickerSet\"`      // Can set sticker set\n\tIsVerified            bool            `json:\"isVerified\"`\n\tIsRestricted          bool            `json:\"isRestricted\"`\n\tIsCreator             bool            `json:\"isCreator\"`\n\tIsScam                bool            `json:\"isScam\"`\n\tIsFake                bool            `json:\"isFake\"`\n\tInviteLink            string          `json:\"inviteLink\"`         // Generated invite link\n\tLinkedChatId          int             `json:\"linkedChatId\"`       // Linked discussion chat for channels\n\tLocation              *Location       `json:\"location\"`           // For location-based chats\n\tMembers               []Member        `json:\"members\"`            // Detailed member list\n\tParticipantsCount     int             `json:\"participantsCount\"`  // Cache member count\n\tActiveUsernames       []string        `json:\"activeUsernames\"`    // For multiple usernames\n\tAvailableReactions    []string        `json:\"availableReactions\"` // Available emoji reactions\n\tTheme                 string          `json:\"theme\"`              // Chat theme\n\tUnreadCount           int             `json:\"unreadCount\"`        // Unread message count\n\tLastMessage           *MessagePreview `json:\"lastMessage\"`        // Last message preview\n\tIsPinned              bool            `json:\"isPinned\"`           // Pinned in user's list\n\tPinOrder              int             `json:\"pinOrder\"`           // Position in pinned list\n\tMuteUntil             time.Time       `json:\"muteUntil\"`          // Mute notification until\n\tCreatedAt             time.Time       `json:\"createdAt\"`\n\tUpdatedAt             time.Time       `json:\"updatedAt\"`\n\tDeletedAt             *time.Time      `json:\"deletedAt\"` // Use pointer for optional field\n\tVersion               int             `json:\"version\"`   // Use int for versioning\n}",
+  "member model": "type Member struct {\n\tUserID      string    `json:\"userID\"`\n\tRole        string    `json:\"role\"`        // \"member\", \"admin\", \"creator\"\n\tCustomTitle string    `json:\"customTitle\"` // For custom admin titles\n\tIsActive    bool      `json:\"isActive\"`\n\tLastActive  time.Time `json:\"lastActive\"` // Added for sorting by activity\n\tJoinedAt    time.Time `json:\"joinedAt\"`\n}"
 }

@@ -12,28 +12,17 @@ func (a *PHAsset) GetCreatedAt() time.Time  { return a.CreatedAt }
 func (a *PHAsset) GetUpdatedAt() time.Time  { return a.UpdatedAt }
 
 type PHAsset struct {
-	ID                  string     `json:"id"`
-	UserID              string     `json:"userID"`
-	FileInfo            FileInfo   `json:"fileInfo"`
-	Image               ImageInfo  `json:"image"`
-	Video               VideoInfo  `json:"video"`
-	Camera              CameraInfo `json:"camera"`
-	Location            Location   `json:"location"`
-	IsCamera            bool       `json:"isCamera"`
-	IsFavorite          bool       `json:"isFavorite"`
-	IsScreenshot        bool       `json:"isScreenshot"`
-	IsHidden            bool       `json:"isHidden"`
-	Albums              []string   `json:"albums"`
-	Trips               []string   `json:"trips"`
-	Persons             []string   `json:"persons"`
-	CanDelete           bool       `json:"canDelete"`
-	CanEditContent      bool       `json:"canEditContent"`
-	CanAddToSharedAlbum bool       `json:"canAddToSharedAlbum"`
-	IsUserLibraryAsset  bool       `json:"IsUserLibraryAsset"`
-	CreatedAt           time.Time  `json:"createdAt"`
-	UpdatedAt           time.Time  `json:"updatedAt"`
-	DeletedAt           time.Time  `json:"deletedAt"`
-	Version             string     `json:"version"`
+	ID        string     `json:"id"`
+	UserID    string     `json:"userID"`
+	FileInfo  FileInfo   `json:"fileInfo"`
+	Image     ImageInfo  `json:"image"`
+	Video     VideoInfo  `json:"video"`
+	Camera    CameraInfo `json:"camera"`
+	Albums    []string   `json:"albums"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
+	DeletedAt time.Time  `json:"deletedAt"`
+	Version   string     `json:"version"`
 }
 
 type FileInfo struct {
@@ -90,82 +79,6 @@ type Location struct {
 	City       string  `json:"city,omitempty"`
 	Village    string  `json:"village,omitempty"`
 	Electronic int     `json:"electronic,omitempty"`
-}
-
-type UpdateOptions struct {
-	AssetIds []string `json:"assetIds,omitempty"` // Asset Ids
-
-	FileSize string `json:"fileSize"`
-	FileType string `json:"fileType"`
-	MimeType string `json:"mimeType"`
-
-	CameraMake  *string `json:"cameraMake,omitempty"`
-	CameraModel *string `json:"cameraModel,omitempty"`
-
-	IsCamera        *bool
-	IsFavorite      *bool
-	IsScreenshot    *bool
-	IsHidden        *bool
-	NotInOnePHAsset *bool
-
-	Albums       *[]string `json:"albums,omitempty"`       // Full album replacement
-	AddAlbums    []string  `json:"addAlbums,omitempty"`    // PHAssets to add
-	RemoveAlbums []string  `json:"removeAlbums,omitempty"` // PHAssets to remove
-
-	Trips       *[]string `json:"trips,omitempty"`       // Full trip replacement
-	AddTrips    []string  `json:"addTrips,omitempty"`    // Trips to add
-	RemoveTrips []string  `json:"removeTrips,omitempty"` // Trips to remove
-
-	Persons       *[]string `json:"persons,omitempty"`       // Full Person replacement
-	AddPersons    []string  `json:"addPersons,omitempty"`    // Persons to add
-	RemovePersons []string  `json:"removePersons,omitempty"` // Persons to remove
-}
-
-type SearchOptions struct {
-	ID     string
-	UserID string
-
-	TextQuery string
-
-	FileSize string `json:"fileSize"`
-	FileType string `json:"fileType"`
-	MimeType string `json:"mimeType"`
-
-	PixelWidth  int
-	PixelHeight int
-
-	CameraMake  string
-	CameraModel string
-
-	IsCamera        *bool
-	IsFavorite      *bool
-	IsScreenshot    *bool
-	IsHidden        *bool
-	IsLandscape     *bool
-	NotInOnePHAsset *bool
-
-	HideScreenshot *bool `json:"hideScreenshot"`
-
-	Albums  []string
-	Trips   []string
-	Persons []string
-
-	NearPoint    []float64 `json:"nearPoint"`    // [latitude, longitude]
-	WithinRadius float64   `json:"withinRadius"` // in kilometers
-	BoundingBox  []float64 `json:"boundingBox"`  // [minLat, minLon, maxLat, maxLon]
-
-	// Date filters
-	CreatedAfter  *time.Time `json:"createdAfter,omitempty"`
-	CreatedBefore *time.Time `json:"createdBefore,omitempty"`
-	ActiveAfter   *time.Time `json:"activeAfter,omitempty"`
-
-	// Pagination
-	Offset int `json:"offset,omitempty"`
-	Limit  int `json:"limit,omitempty"`
-
-	// Sorting
-	SortBy    string `json:"sortBy,omitempty"`    // "title", "created", "members", "lastActivity"
-	SortOrder string `json:"sortOrder,omitempty"` // "asc" or "desc"
 }
 
 // https://chat.deepseek.com/a/chat/s/9b010f32-b23d-4f9b-ae0c-31a9b2c9408c

@@ -2,9 +2,57 @@ package phasset
 
 import (
 	"strings"
+	"time"
 
 	"github.com/mahdi-cpp/iris-tools/search"
 )
+
+type SearchOptions struct {
+	ID     string
+	UserID string
+
+	TextQuery string
+
+	FileSize string `json:"fileSize"`
+	FileType string `json:"fileType"`
+	MimeType string `json:"mimeType"`
+
+	PixelWidth  int
+	PixelHeight int
+
+	CameraMake  string
+	CameraModel string
+
+	IsCamera        *bool
+	IsFavorite      *bool
+	IsScreenshot    *bool
+	IsHidden        *bool
+	IsLandscape     *bool
+	NotInOnePHAsset *bool
+
+	HideScreenshot *bool `json:"hideScreenshot"`
+
+	Albums  []string
+	Trips   []string
+	Persons []string
+
+	NearPoint    []float64 `json:"nearPoint"`    // [latitude, longitude]
+	WithinRadius float64   `json:"withinRadius"` // in kilometers
+	BoundingBox  []float64 `json:"boundingBox"`  // [minLat, minLon, maxLat, maxLon]
+
+	// Date filters
+	CreatedAfter  *time.Time `json:"createdAfter,omitempty"`
+	CreatedBefore *time.Time `json:"createdBefore,omitempty"`
+	ActiveAfter   *time.Time `json:"activeAfter,omitempty"`
+
+	// Pagination
+	Offset int `json:"offset,omitempty"`
+	Limit  int `json:"limit,omitempty"`
+
+	// Sorting
+	SortBy    string `json:"sortBy,omitempty"`    // "title", "created", "members", "lastActivity"
+	SortOrder string `json:"sortOrder,omitempty"` // "asc" or "desc"
+}
 
 const MaxLimit = 1000
 
@@ -45,51 +93,11 @@ func BuildPHAssetCriteria(with *SearchOptions) search.Criteria[*PHAsset] {
 			}
 		}
 
-		// Boolean flags
-		if with.IsCamera != nil && c.IsCamera != *with.IsCamera {
-			return false
-		}
-		if with.IsFavorite != nil && c.IsFavorite != *with.IsFavorite {
-			return false
-		}
-		if with.IsScreenshot != nil && c.IsScreenshot != *with.IsScreenshot {
-			return false
-		}
-		if with.IsHidden != nil && c.IsHidden != *with.IsHidden {
-			return false
-		}
-
 		// Collection membership filters
 		if len(with.Albums) > 0 {
 			found := false
 			for _, memberID := range with.Albums {
 				if search.StringInSlice(memberID, c.Albums) {
-					found = true
-					break
-				}
-			}
-			if !found {
-				return false
-			}
-		}
-
-		if len(with.Trips) > 0 {
-			found := false
-			for _, adminID := range with.Trips {
-				if search.StringInSlice(adminID, c.Trips) {
-					found = true
-					break
-				}
-			}
-			if !found {
-				return false
-			}
-		}
-
-		if len(with.Persons) > 0 {
-			found := false
-			for _, blockID := range with.Persons {
-				if search.StringInSlice(blockID, c.Persons) {
 					found = true
 					break
 				}
@@ -117,7 +125,7 @@ func Search(chats []*PHAsset, with *SearchOptions) []*PHAsset {
 	criteria := BuildPHAssetCriteria(with)
 
 	// Execute search_manager
-	results := search.Search(chats, criteria)
+	results := search.Find(chats, criteria)
 
 	// Sort results if needed
 	if with.SortBy != "" {

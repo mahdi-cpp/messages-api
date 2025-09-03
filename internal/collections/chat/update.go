@@ -6,6 +6,35 @@ import (
 	"github.com/mahdi-cpp/iris-tools/update"
 )
 
+type UpdateOptions struct {
+	ChatIDs []string `json:"chatIDs,omitempty"` // Asset Ids
+
+	Type        string `json:"type"` // "private", "group", "channel", "supergroup"
+	Title       string `json:"title"`
+	Username    string `json:"username"` // Unique identifier for public channels/groups
+	Description string `json:"description"`
+	Avatar      string `json:"avatar"` // Chat profile photo
+
+	CanSetStickerSet *bool `json:"canSetStickerSet"` // Can set sticker set
+	IsVerified       *bool `json:"isVerified"`
+	IsRestricted     *bool `json:"isRestricted"`
+	IsCreator        *bool `json:"isCreator"`
+	IsScam           *bool `json:"isScam"`
+	IsFake           *bool `json:"isFake"`
+
+	ActiveUsernames       *[]string `json:"users,omitempty"`                 // Full users replacement
+	AddActiveUsernames    []string  `json:"AddActiveUsernames,omitempty"`    // Users to add
+	RemoveActiveUsernames []string  `json:"removeActiveUsernames,omitempty"` // Users to remove
+
+	Members        *[]Member
+	AddMembers     []Member
+	RemoveMembers  []Member
+	MembersUpdates []update.NestedFieldUpdate[Member]
+}
+
+// Key extractors for nested structs
+func memberKeyExtractor(m Member) string { return m.UserID }
+
 // Initialize updater
 var metadataUpdater = update.NewUpdater[Chat, UpdateOptions]()
 
