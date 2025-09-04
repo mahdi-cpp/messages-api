@@ -10,3 +10,12 @@ https://chat.deepseek.com/a/chat/s/6cca1826-8157-40bc-846d-5d85c864f1b0
 
 ### Designing Real-Time User Status System Architecture
 https://chat.deepseek.com/a/chat/s/f804f2ac-4125-4884-897a-8ebef261b12c
+
+
+
+### telegram 
+
+### telegram Go Struct for Telegram-like Chat API
+https://chat.deepseek.com/a/chat/s/0a496f86-10a6-449d-ad1d-0cf6f2498da0
+
+https://core.telegram.org/methods

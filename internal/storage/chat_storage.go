@@ -10,7 +10,7 @@ import (
 	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
 )
 
-const basePath = "/app/iris/com.iris.messages/data"
+const basePath = "/app/iris/com.iris.message/data"
 
 func getChatPath(chatID string) string {
 	return filepath.Join(basePath, fmt.Sprintf("chat_%s", chatID))
@@ -21,7 +21,7 @@ func getChatMetadataPath(chatID string) string {
 }
 
 func getChatMessagesPath(chatID string) string {
-	return filepath.Join(getChatPath(chatID), "messages")
+	return filepath.Join(getChatPath(chatID), "message")
 }
 
 func getMessagePath(chatID, messageID string) string {
@@ -35,7 +35,7 @@ func SaveChat(chat *chat.Chat) error {
 		return err
 	}
 
-	// Create messages directory if it doesn't exist
+	// Create message directory if it doesn't exist
 	messagesPath := getChatMessagesPath(chat.ID)
 	if err := os.MkdirAll(messagesPath, 0755); err != nil {
 		return err

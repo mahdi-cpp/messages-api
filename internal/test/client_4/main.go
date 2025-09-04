@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	// Test with two clients in the same room
+	// Test with two clients in the same chat
 	client1 := client.NewChatClient(client.Config{
 		ServerURL: "ws://localhost:8089/ws",
 		UserID:    "test_user_1",
@@ -34,12 +34,12 @@ func main() {
 	}
 	defer client2.Close()
 
-	// Both join the same room
-	if err := client1.JoinRoom("family_group"); err != nil {
+	// Both join the same chat
+	if err := client1.JoinChat("family_group"); err != nil {
 		log.Fatal("Client1 join failed:", err)
 	}
 
-	if err := client2.JoinRoom("family_group"); err != nil {
+	if err := client2.JoinChat("family_group"); err != nil {
 		log.Fatal("Client2 join failed:", err)
 	}
 
@@ -52,11 +52,11 @@ func main() {
 		log.Fatal("Client1 send failed:", err)
 	}
 
-	// Wait for messages to be delivered
+	// Wait for message to be delivered
 	time.Sleep(2 * time.Second)
 
-	fmt.Printf("Client1 received %d messages\n", client1.GetMessageCount())
-	fmt.Printf("Client2 received %d messages\n", client2.GetMessageCount())
+	fmt.Printf("Client1 received %d message\n", client1.GetMessageCount())
+	fmt.Printf("Client2 received %d message\n", client2.GetMessageCount())
 
 	// Client2 should have received the message from Client1
 	if client2.GetMessageCount() > 0 {

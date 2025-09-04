@@ -120,7 +120,7 @@ func (c *ChatClient) Connect() error {
 	return nil
 }
 
-// readPump handles incoming messages from the server
+// readPump handles incoming message from the server
 func (c *ChatClient) readPump() {
 	defer func() {
 		c.conn.Close()
@@ -150,7 +150,7 @@ func (c *ChatClient) readPump() {
 	}
 }
 
-// handleMessages processes incoming messages
+// handleMessages processes incoming message
 func (c *ChatClient) handleMessages() {
 	for {
 		select {
@@ -357,7 +357,7 @@ func (c *ChatClient) GetChats() []string {
 	return chats
 }
 
-// GetMessageCount returns the number of messages received
+// GetMessageCount returns the number of message received
 func (c *ChatClient) GetMessageCount() int {
 	return c.messageCount
 }

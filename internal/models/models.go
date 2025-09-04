@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type Room struct {
+type Chat struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`

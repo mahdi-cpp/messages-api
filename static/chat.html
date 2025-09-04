@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Application with Rooms</title>
+    <title>Chat Application with Chats</title>
     <style>
         /* Add these styles to your existing CSS */
 
-        .rooms-sidebar {
+        .chats-sidebar {
             width: 250px;
             background-color: #2c3e50;
             color: white;
@@ -15,14 +15,14 @@
             overflow-y: auto;
         }
 
-        .rooms-header {
+        .chats-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
         }
 
-        .create-room-btn {
+        .create-chat-btn {
             background-color: #27ae60;
             color: white;
             border: none;
@@ -33,12 +33,12 @@
             font-size: 18px;
         }
 
-        .room-list {
+        .chat-list {
             list-style: none;
             padding: 0;
         }
 
-        .room-item {
+        .chat-item {
             padding: 10px;
             margin-bottom: 5px;
             border-radius: 5px;
@@ -46,11 +46,11 @@
             transition: background-color 0.3s;
         }
 
-        .room-item:hover {
+        .chat-item:hover {
             background-color: #34495e;
         }
 
-        .room-item.active {
+        .chat-item.active {
             background-color: #3498db;
         }
 
@@ -65,7 +65,7 @@
             height: 100vh;
         }
 
-        /* Modal styles for creating rooms */
+        /* Modal styles for creating chats */
         .modal {
             display: none;
             position: fixed;
@@ -143,20 +143,20 @@
 <body>
 
 <div class="chat-container">
-    <div class="rooms-sidebar">
-        <div class="rooms-header">
-            <h3>Rooms</h3>
-            <button class="create-room-btn" id="create-room-btn">+</button>
+    <div class="chats-sidebar">
+        <div class="chats-header">
+            <h3>Chats</h3>
+            <button class="create-chat-btn" id="create-chat-btn">+</button>
         </div>
-        <ul class="room-list" id="room-list">
-            <li class="room-item active" data-room-id="general">General</li>
-            <!-- Rooms will be populated dynamically -->
+        <ul class="chat-list" id="chat-list">
+            <li class="chat-item active" data-chat-id="general">General</li>
+            <!-- Chats will be populated dynamically -->
         </ul>
     </div>
 
     <div class="main-chat-area">
         <div class="chat-header">
-            <div class="chat-title" id="current-room">General</div>
+            <div class="chat-title" id="current-chat">General</div>
             <div class="online-indicator">
                 <div class="online-dot"></div>
                 <span id="online-count">0 online</span>
@@ -191,20 +191,20 @@
     </div>
 </div>
 
-<!-- Create Room Modal -->
-<div class="modal" id="create-room-modal">
+<!-- Create Chat Modal -->
+<div class="modal" id="create-chat-modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>Create New Room</h3>
+            <h3>Create New Chat</h3>
             <button class="close-modal">&times;</button>
         </div>
         <div class="form-group">
-            <label for="room-name">Room Name</label>
-            <input type="text" id="room-name" placeholder="Enter room name">
+            <label for="chat-name">Chat Name</label>
+            <input type="text" id="chat-name" placeholder="Enter chat name">
         </div>
         <div class="modal-actions">
-            <button class="btn btn-secondary" id="cancel-create-room">Cancel</button>
-            <button class="btn btn-primary" id="confirm-create-room">Create</button>
+            <button class="btn btn-secondary" id="cancel-create-chat">Cancel</button>
+            <button class="btn btn-primary" id="confirm-create-chat">Create</button>
         </div>
     </div>
 </div>
@@ -218,21 +218,21 @@
         const typingIndicator = document.getElementById('typing-indicator');
         const connectionStatus = document.getElementById('connection-status');
         const onlineCount = document.getElementById('online-count');
-        const roomList = document.getElementById('room-list');
-        const createRoomBtn = document.getElementById('create-room-btn');
-        const createRoomModal = document.getElementById('create-room-modal');
-        const cancelCreateRoom = document.getElementById('cancel-create-room');
-        const confirmCreateRoom = document.getElementById('confirm-create-room');
-        const roomNameInput = document.getElementById('room-name');
-        const currentRoomElement = document.getElementById('current-room');
+        const chatList = document.getElementById('chat-list');
+        const createChatBtn = document.getElementById('create-chat-btn');
+        const createChatModal = document.getElementById('create-chat-modal');
+        const cancelCreateChat = document.getElementById('cancel-create-chat');
+        const confirmCreateChat = document.getElementById('confirm-create-chat');
+        const chatNameInput = document.getElementById('chat-name');
+        const currentChatElement = document.getElementById('current-chat');
 
         let ws;
         let typingTimer;
         const TYPING_TIMEOUT = 3000;
         const currentUser = generateRandomUser();
         let isConnected = false;
-        let currentRoom = 'general';
-        let roomMessages = {}; // Store messages by room ID
+        let currentChat = 'general';
+        let chatMessages = {}; // Store message by chat ID
 
         // Initialize WebSocket connection
         connectWebSocket();
@@ -251,13 +251,13 @@
                 updateConnectionStatus(true);
                 addSystemMessage('Connected to chat');
 
-                // Join the default room
-                joinRoom('general');
+                // Join the default chat
+                joinChat('general');
 
-                // Request room list
+                // Request chat list
                 setTimeout(() => {
-                    // Simulate receiving room list
-                    handleRoomList({
+                    // Simulate receiving chat list
+                    handleChatList({
                         general: 'General',
                         random: 'Random Chat',
                         tech: 'Technology',
@@ -267,133 +267,133 @@
             }, 1000);
         }
 
-        function joinRoom(roomId) {
-            // Leave current room if joined to another
-            if (currentRoom && currentRoom !== roomId) {
-                // Send leave room message (in real implementation)
+        function joinChat(chatId) {
+            // Leave current chat if joined to another
+            if (currentChat && currentChat !== chatId) {
+                // Send leave chat message (in real implementation)
                 // ws.send(JSON.stringify({
-                //     type: 'leave_room',
-                //     roomId: currentRoom
+                //     type: 'leave_chat',
+                //     chatId: currentChat
                 // }));
             }
 
-            // Update current room
-            currentRoom = roomId;
-            currentRoomElement.textContent = getRoomName(roomId);
+            // Update current chat
+            currentChat = chatId;
+            currentChatElement.textContent = getChatName(chatId);
 
-            // Update UI to show active room
-            document.querySelectorAll('.room-item').forEach(item => {
+            // Update UI to show active chat
+            document.querySelectorAll('.chat-item').forEach(item => {
                 item.classList.remove('active');
-                if (item.getAttribute('data-room-id') === roomId) {
+                if (item.getAttribute('data-chat-id') === chatId) {
                     item.classList.add('active');
                 }
             });
 
-            // Clear chat messages
+            // Clear chat message
             chatMessages.innerHTML = '<div class="typing-indicator" id="typing-indicator"><span></span><span></span><span></span></div>';
 
-            // Load messages for this room
-            if (roomMessages[roomId]) {
-                roomMessages[roomId].forEach(message => {
+            // Load message for this chat
+            if (chatMessages[chatId]) {
+                chatMessages[chatId].forEach(message => {
                     addMessageToUI(message, message.userId === currentUser.id);
                 });
             }
 
-            // Send join room message (in real implementation)
+            // Send join chat message (in real implementation)
             // ws.send(JSON.stringify({
-            //     type: 'join_room',
-            //     roomId: roomId
+            //     type: 'join_chat',
+            //     chatId: chatId
             // }));
 
             scrollToBottom();
         }
 
-        function createRoom(roomName) {
-            const roomId = generateSlug(roomName);
+        function createChat(chatName) {
+            const chatId = generateSlug(chatName);
 
             // In real implementation, send to server:
             ws.send(JSON.stringify({
-                type: 'create_room',
-                roomId: roomId,
-                roomName: roomName
+                type: 'create_chat',
+                chatId: chatId,
+                chatName: chatName
             }));
 
             // For demo, just add to UI
-            addRoomToList(roomId, roomName);
-            joinRoom(roomId);
+            addChatToList(chatId, chatName);
+            joinChat(chatId);
 
             // Close modal
-            createRoomModal.style.display = 'none';
-            roomNameInput.value = '';
+            createChatModal.style.display = 'none';
+            chatNameInput.value = '';
         }
 
-        function handleRoomList(rooms) {
-            // Clear existing rooms (except default ones)
-            const roomItems = roomList.querySelectorAll('.room-item');
-            roomItems.forEach(item => {
-                const roomId = item.getAttribute('data-room-id');
-                if (roomId !== 'general') {
+        function handleChatList(chats) {
+            // Clear existing chats (except default ones)
+            const chatItems = chatList.querySelectorAll('.chat-item');
+            chatItems.forEach(item => {
+                const chatId = item.getAttribute('data-chat-id');
+                if (chatId !== 'general') {
                     item.remove();
                 }
             });
 
-            // Add rooms to list
-            for (const [id, name] of Object.entries(rooms)) {
+            // Add chats to list
+            for (const [id, name] of Object.entries(chats)) {
                 if (id !== 'general') {
-                    addRoomToList(id, name);
+                    addChatToList(id, name);
                 }
             }
         }
 
-        function addRoomToList(roomId, roomName) {
-            const roomItem = document.createElement('li');
-            roomItem.className = 'room-item';
-            roomItem.setAttribute('data-room-id', roomId);
-            roomItem.textContent = roomName;
+        function addChatToList(chatId, chatName) {
+            const chatItem = document.createElement('li');
+            chatItem.className = 'chat-item';
+            chatItem.setAttribute('data-chat-id', chatId);
+            chatItem.textContent = chatName;
 
-            roomItem.addEventListener('click', function() {
-                joinRoom(roomId);
+            chatItem.addEventListener('click', function() {
+                joinChat(chatId);
             });
 
-            roomList.appendChild(roomItem);
+            chatList.appendChild(chatItem);
         }
 
-        function getRoomName(roomId) {
-            const roomItem = roomList.querySelector(`[data-room-id="${roomId}"]`);
-            return roomItem ? roomItem.textContent : roomId;
+        function getChatName(chatId) {
+            const chatItem = chatList.querySelector(`[data-chat-id="${chatId}"]`);
+            return chatItem ? chatItem.textContent : chatId;
         }
 
-        // Event listeners for room management
-        createRoomBtn.addEventListener('click', function() {
-            createRoomModal.style.display = 'flex';
+        // Event listeners for chat management
+        createChatBtn.addEventListener('click', function() {
+            createChatModal.style.display = 'flex';
         });
 
-        cancelCreateRoom.addEventListener('click', function() {
-            createRoomModal.style.display = 'none';
-            roomNameInput.value = '';
+        cancelCreateChat.addEventListener('click', function() {
+            createChatModal.style.display = 'none';
+            chatNameInput.value = '';
         });
 
-        confirmCreateRoom.addEventListener('click', function() {
-            const roomName = roomNameInput.value.trim();
-            if (roomName) {
-                createRoom(roomName);
+        confirmCreateChat.addEventListener('click', function() {
+            const chatName = chatNameInput.value.trim();
+            if (chatName) {
+                createChat(chatName);
             }
         });
 
         document.querySelector('.close-modal').addEventListener('click', function() {
-            createRoomModal.style.display = 'none';
-            roomNameInput.value = '';
+            createChatModal.style.display = 'none';
+            chatNameInput.value = '';
         });
 
         // Close modal when clicking outside
         window.addEventListener('click', function(event) {
-            if (event.target === createRoomModal) {
-                createRoomModal.style.display = 'none';
-                roomNameInput.value = '';
+            if (event.target === createChatModal) {
+                createChatModal.style.display = 'none';
+                chatNameInput.value = '';
             }
         });
 
-        // Modify message handling to include room context
+        // Modify message handling to include chat context
         function sendMessage() {
             const content = messageInput.value.trim();
             if (!content || !isConnected) return;
@@ -404,15 +404,15 @@
                 userId: currentUser.id,
                 username: currentUser.username,
                 content: content,
-                chatId: currentRoom, // Send to current room
+                chatId: currentChat, // Send to current chat
                 timestamp: new Date()
             };
 
-            // Store message in room-specific storage
-            if (!roomMessages[currentRoom]) {
-                roomMessages[currentRoom] = [];
+            // Store message in chat-specific storage
+            if (!chatMessages[currentChat]) {
+                chatMessages[currentChat] = [];
             }
-            roomMessages[currentRoom].push(message);
+            chatMessages[currentChat].push(message);
 
             // Add to UI
             addMessageToUI(message, true);
@@ -424,7 +424,7 @@
             messageInput.value = '';
             messageInput.style.height = 'auto';
 
-            // Simulate receiving responses in the same room
+            // Simulate receiving responses in the same chat
             if (Math.random() > 0.3) {
                 setTimeout(() => {
                     const responses = [
@@ -444,32 +444,32 @@
                         userId: 'user' + Math.floor(Math.random() * 5 + 2),
                         username: randomUser,
                         content: randomResponse,
-                        chatId: currentRoom,
+                        chatId: currentChat,
                         timestamp: new Date()
                     };
 
                     // Store and display response
-                    if (!roomMessages[currentRoom]) {
-                        roomMessages[currentRoom] = [];
+                    if (!chatMessages[currentChat]) {
+                        chatMessages[currentChat] = [];
                     }
-                    roomMessages[currentRoom].push(responseMessage);
+                    chatMessages[currentChat].push(responseMessage);
                     addMessageToUI(responseMessage, false);
                 }, 1000 + Math.random() * 2000);
             }
         }
 
-        // Update message handling to check room ID
+        // Update message handling to check chat ID
         function receiveMessage(message) {
-            // Only display if message is for current room
-            if (message.chatId === currentRoom) {
+            // Only display if message is for current chat
+            if (message.chatId === currentChat) {
                 addMessageToUI(message, false);
             }
 
-            // Store message regardless of current room
-            if (!roomMessages[message.chatId]) {
-                roomMessages[message.chatId] = [];
+            // Store message regardless of current chat
+            if (!chatMessages[message.chatId]) {
+                chatMessages[message.chatId] = [];
             }
-            roomMessages[message.chatId].push(message);
+            chatMessages[message.chatId].push(message);
         }
 
         // Keep the rest of your existing functions (addMessageToUI, addSystemMessage, etc.)

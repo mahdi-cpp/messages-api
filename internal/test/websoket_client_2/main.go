@@ -53,7 +53,7 @@ func main() {
 	// Use a 'done' channel to signal when the program should stop.
 	done := make(chan struct{})
 
-	// Start a goroutine to continuously read messages.
+	// Start a goroutine to continuously read message.
 	go func() {
 		defer close(done)
 		for {
@@ -66,8 +66,8 @@ func main() {
 		}
 	}()
 
-	sendJoinRoom(c, "friends_chat")
-	sendJoinRoom(c, "family_chat")
+	sendJoinChat(c, "friends_chat")
+	sendJoinChat(c, "family_chat")
 
 	// Send an initial message to the server.
 	sendMessage(c, userID, username, "Hello my family", "family_chat")
@@ -99,18 +99,18 @@ func main() {
 	//}
 }
 
-type JoinRoom struct {
+type JoinChat struct {
 	Type   string `json:"type"`
-	RoomID string `json:"roomId"`
+	ChatID string `json:"chatId"`
 }
 
-func sendJoinRoom(c *websocket.Conn, roomID string) {
+func sendJoinChat(c *websocket.Conn, chatID string) {
 
 	// 1. Create the Go struct with the message data.
 	// You'll need to install the UUID package: `go get github.com/google/uuid`
-	msg := JoinRoom{
-		Type:   "join_room",
-		RoomID: roomID,
+	msg := JoinChat{
+		Type:   "join_chat",
+		ChatID: chatID,
 	}
 
 	// 2. Marshal the struct into a JSON byte slice.
@@ -130,7 +130,7 @@ func sendJoinRoom(c *websocket.Conn, roomID string) {
 	log.Printf("Message sent: %s", jsonMessage)
 }
 
-func sendMessage(c *websocket.Conn, currentUserID, currentUsername, content, currentRoom string) {
+func sendMessage(c *websocket.Conn, currentUserID, currentUsername, content, currentChat string) {
 
 	// 1. Create the Go struct with the message data.
 	// You'll need to install the UUID package: `go get github.com/google/uuid`
@@ -140,7 +140,7 @@ func sendMessage(c *websocket.Conn, currentUserID, currentUsername, content, cur
 		UserID:    currentUserID,
 		Username:  currentUsername,
 		Content:   content,
-		ChatID:    currentRoom,
+		ChatID:    currentChat,
 		Timestamp: time.Now(),
 	}
 

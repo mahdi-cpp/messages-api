@@ -13,7 +13,7 @@ import (
 
 func main() {
 
-	collection, err := collection_manager_v3.NewCollectionManager[*chat.Chat]("/app/github.com/mahdi.cpp/messages-api/internal/documents/chats.json", true)
+	collection, err := collection_manager_v3.NewCollectionManager[*chat.Chat]("/app/github.com/mahdi.cpp/message-api/internal/documents/chats.json", true)
 	if err != nil {
 		panic(err)
 	}

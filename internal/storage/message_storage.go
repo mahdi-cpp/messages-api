@@ -45,7 +45,7 @@ func LoadChatMessages(chatID string) ([]*message.Message, error) {
 			messageID := entry.Name()[:len(entry.Name())-5]
 			message1, err := LoadMessage(chatID, messageID)
 			if err != nil {
-				continue // Skip messages that can't be loaded
+				continue // Skip message that can't be loaded
 			}
 
 			messages = append(messages, message1)

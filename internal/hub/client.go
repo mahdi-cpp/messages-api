@@ -63,7 +63,7 @@ func (c *Client) GetChats() []string {
 	return chats
 }
 
-// ReadPump handles messages from the WebSocket connection
+// ReadPump handles message from the WebSocket connection
 func (c *Client) ReadPump() {
 
 	defer func() {
@@ -95,7 +95,7 @@ func (c *Client) ReadPump() {
 	}
 }
 
-// WritePump sends messages to the WebSocket connection
+// WritePump sends message to the WebSocket connection
 func (c *Client) WritePump() {
 
 	ticker := time.NewTicker(54 * time.Second) // Ping interval
@@ -122,7 +122,7 @@ func (c *Client) WritePump() {
 			}
 			writer.Write(message)
 
-			// Add queued messages to the current WebSocket message
+			// Add queued message to the current WebSocket message
 			n := len(c.send)
 			for i := 0; i < n; i++ {
 				writer.Write(<-c.send)
@@ -143,13 +143,13 @@ func (c *Client) WritePump() {
 	}
 }
 
-// handleMessage processes different types of incoming messages
+// handleMessage processes different types of incoming message
 func (c *Client) handleMessage(rawMessage []byte) {
 
-	// Forward all messages to the hub for processing
+	// Forward all message to the hub for processing
 	c.hub.HandleClientMessage(c, rawMessage)
 
-	// Instead of handling messages here, forward them to the hub/handler
+	// Instead of handling message here, forward them to the hub/handler
 	// This ensures consistent message processing
 
 	//c.mutex.RLock()
@@ -165,7 +165,7 @@ func (c *Client) handleMessage(rawMessage []byte) {
 	//}
 }
 
-// handleMessageLocally handles messages when no external handler is set
+// handleMessageLocally handles message when no external handler is set
 //func (c *Client) handleMessageLocally(rawMessage []byte) {
 //	var baseMessage struct {
 //		Type string `json:"type"`
@@ -176,7 +176,7 @@ func (c *Client) handleMessage(rawMessage []byte) {
 //		return
 //	}
 //
-//	// Basic local handling for critical messages
+//	// Basic local handling for critical message
 //	switch baseMessage.Type {
 //	case "ping":
 //		// Respond to ping
@@ -212,7 +212,7 @@ func (c *Client) handleTypingMessage(rawMessage []byte) {
 	})
 }
 
-// handleChatMessage processes chat messages
+// handleChatMessage processes chat message
 func (c *Client) handleChatMessage(rawMessage []byte) {
 
 	var message struct {

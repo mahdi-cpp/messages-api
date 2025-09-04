@@ -22,8 +22,8 @@ type ChatManager struct {
 func NewChatManager(chatID string) (*ChatManager, error) {
 	manager := &ChatManager{}
 
-	var root = "/app/iris/com.iris.messages/chats"
-	var chatMessage = "/metadata/v1/messages"
+	var root = "/app/iris/com.iris.message/chats"
+	var chatMessage = "/metadata/v1/message"
 
 	var err error
 	manager.messages, err = collection_manager_v3.NewCollectionManager[*message.Message](filepath.Join(root, chatID, chatMessage), false)

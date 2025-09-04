@@ -341,7 +341,7 @@ func (h *Hub) IsUserInChat(userID, chatID string) bool {
 }
 
 //-----------------------------------------------
-// hub/hub.go - Add a method to handle client messages through the hub
+// hub/hub.go - Add a method to handle client message through the hub
 
 // HandleClientMessage processes a message from a client
 func (h *Hub) HandleClientMessage(client *Client, rawMessage []byte) {
@@ -374,7 +374,7 @@ func (h *Hub) HandleClientMessage(client *Client, rawMessage []byte) {
 	}
 }
 
-// HandleChatMessage processes and broadcasts chat messages
+// HandleChatMessage processes and broadcasts chat message
 func (h *Hub) HandleChatMessage(client *Client, content, chatID string) {
 
 	if content == "" {

@@ -6,7 +6,7 @@ import (
 )
 
 const rootDir = "/media/mahdi/Cloud/Happle"
-const applicationDir = "com.helium.messages"
+const applicationDir = "com.helium.message"
 const usersDir = "users"
 
 func GetPath(file string) string {

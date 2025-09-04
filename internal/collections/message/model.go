@@ -13,19 +13,6 @@ func (a *Message) GetUpdatedAt() time.Time  { return a.UpdatedAt }
 
 type MessageType string
 
-const (
-	MessageTypeText     MessageType = "text"
-	MessageTypePhoto    MessageType = "photo"
-	MessageTypeVideo    MessageType = "video"
-	MessageTypeDocument MessageType = "document"
-	MessageTypeAudio    MessageType = "audio"
-	MessageTypeVoice    MessageType = "voice"
-	MessageTypeSticker  MessageType = "sticker"
-	MessageTypeLocation MessageType = "location"
-	MessageTypeContact  MessageType = "contact"
-	MessageTypePoll     MessageType = "poll"
-)
-
 type Message struct {
 	ID               string       `json:"id"`
 	ChatID           string       `json:"chatID"`           // Identifier of the chat
@@ -55,7 +42,7 @@ type Message struct {
 	CreatedAt        time.Time    `json:"createdAt"`        // When was it deleted
 	DeletedAt        time.Time    `json:"deletedAt"`        // When was it created
 	UpdatedAt        time.Time    `json:"updatedAt"`        // When was it last modified
-	ExpiryAt         time.Time    `json:"expiryAt"`         // For self-destructing messages
+	ExpiryAt         time.Time    `json:"expiryAt"`         // For self-destructing message
 	Version          string       `json:"version"`          // For optimistic concurrency control
 }
 
@@ -115,3 +102,16 @@ type TypingStatus struct {
 	UserID string `json:"userID"`
 	Typing bool   `json:"typing"`
 }
+
+const (
+	MessageTypeText     MessageType = "text"
+	MessageTypePhoto    MessageType = "photo"
+	MessageTypeVideo    MessageType = "video"
+	MessageTypeDocument MessageType = "document"
+	MessageTypeAudio    MessageType = "audio"
+	MessageTypeVoice    MessageType = "voice"
+	MessageTypeSticker  MessageType = "sticker"
+	MessageTypeLocation MessageType = "location"
+	MessageTypeContact  MessageType = "contact"
+	MessageTypePoll     MessageType = "poll"
+)
