@@ -3,25 +3,28 @@ package hub
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+)
+
+// ErrClientSendBufferFull Custom errors
+var (
+	ErrClientSendBufferFull = errors.New("client send buffer is full")
 )
 
 // Client represents a connected user
 type Client struct {
-	hub            *Hub
-	conn           *websocket.Conn
-	userID         string
-	username       string
-	send           chan []byte
-	rooms          map[string]bool       // Track which rooms the user is in
-	messageHandler func(*Client, []byte) // Add this field
-	mutex          sync.RWMutex
+	hub      *Hub
+	conn     *websocket.Conn
+	userID   string
+	username string
+	send     chan []byte
+	rooms    map[string]bool // Track which rooms the user is in
+	//messageHandler func(*Client, []byte) // Add this field
+	mutex sync.RWMutex
 }
 
 // NewClient creates a new client instance
@@ -36,11 +39,11 @@ func NewClient(hub *Hub, conn *websocket.Conn, userID string) *Client {
 }
 
 // SetMessageHandler sets the external message handler
-func (c *Client) SetMessageHandler(handler func(*Client, []byte)) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	c.messageHandler = handler
-}
+//func (c *Client) SetMessageHandler(handler func(*Client, []byte)) {
+//	c.mutex.Lock()
+//	defer c.mutex.Unlock()
+//	c.messageHandler = handler
+//}
 
 // IsInRoom checks if the client is in a specific room
 func (c *Client) IsInRoom(roomID string) bool {
@@ -150,47 +153,50 @@ func (c *Client) WritePump() {
 // handleMessage processes different types of incoming messages
 func (c *Client) handleMessage(rawMessage []byte) {
 
+	// Forward all messages to the hub for processing
+	c.hub.HandleClientMessage(c, rawMessage)
+
 	// Instead of handling messages here, forward them to the hub/handler
 	// This ensures consistent message processing
 
-	c.mutex.RLock()
-	handler := c.messageHandler
-	c.mutex.RUnlock()
-
-	if handler != nil {
-		// Use external message handler
-		handler(c, rawMessage)
-	} else {
-		// Fallback to local handling
-		c.handleMessageLocally(rawMessage)
-	}
+	//c.mutex.RLock()
+	//handler := c.messageHandler
+	//c.mutex.RUnlock()
+	//
+	//if handler != nil {
+	//	// Use external message handler
+	//	handler(c, rawMessage)
+	//} else {
+	//	// Fallback to local handling
+	//	c.handleMessageLocally(rawMessage)
+	//}
 }
 
 // handleMessageLocally handles messages when no external handler is set
-func (c *Client) handleMessageLocally(rawMessage []byte) {
-	var baseMessage struct {
-		Type string `json:"type"`
-	}
-
-	if err := json.Unmarshal(rawMessage, &baseMessage); err != nil {
-		log.Printf("Error parsing message from client %s: %v", c.userID, err)
-		return
-	}
-
-	// Basic local handling for critical messages
-	switch baseMessage.Type {
-	case "ping":
-		// Respond to ping
-		err := c.SendMessage(map[string]interface{}{
-			"type": "pong",
-		})
-		if err != nil {
-			return
-		}
-	default:
-		log.Printf("No message handler for type: %s from client %s", baseMessage.Type, c.userID)
-	}
-}
+//func (c *Client) handleMessageLocally(rawMessage []byte) {
+//	var baseMessage struct {
+//		Type string `json:"type"`
+//	}
+//
+//	if err := json.Unmarshal(rawMessage, &baseMessage); err != nil {
+//		log.Printf("Error parsing message from client %s: %v", c.userID, err)
+//		return
+//	}
+//
+//	// Basic local handling for critical messages
+//	switch baseMessage.Type {
+//	case "ping":
+//		// Respond to ping
+//		err := c.SendMessage(map[string]interface{}{
+//			"type": "pong",
+//		})
+//		if err != nil {
+//			return
+//		}
+//	default:
+//		log.Printf("No message handler for type: %s from client %s", baseMessage.Type, c.userID)
+//	}
+//}
 
 // handleTypingMessage processes typing indicators
 func (c *Client) handleTypingMessage(rawMessage []byte) {
@@ -237,7 +243,7 @@ func (c *Client) handleChatMessage(rawMessage []byte) {
 		"id":        chatID,
 		"userId":    c.userID,
 		"content":   message.Content,
-		"chatId":    message.ChatID,
+		"chatId":    "message.ChatID_12",
 		"timestamp": time.Now(),
 	}
 
@@ -404,11 +410,6 @@ func (c *Client) Close() {
 	c.conn.Close()
 }
 
-// ErrClientSendBufferFull Custom errors
-var (
-	ErrClientSendBufferFull = errors.New("client send buffer is full")
-)
-
 // Username returns the client's username
 func (c *Client) Username() string {
 	c.mutex.RLock()
@@ -426,15 +427,4 @@ func (c *Client) SetUserInfo(username string) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.username = username
-}
-
-// generateUUID generates a unique identifier for messages
-func generateUUID() (string, error) {
-
-	u7, err2 := uuid.NewV7()
-	if err2 != nil {
-		return "", fmt.Errorf("error generating UUIDv7: %w", err2)
-	}
-
-	return u7.String(), nil
 }

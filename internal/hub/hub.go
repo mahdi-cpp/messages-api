@@ -2,9 +2,12 @@ package hub
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Room represents a chat room
@@ -335,4 +338,163 @@ func (h *Hub) IsUserInRoom(userID, roomID string) bool {
 		return userExists
 	}
 	return false
+}
+
+//-----------------------------------------------
+// hub/hub.go - Add a method to handle client messages through the hub
+
+// HandleClientMessage processes a message from a client
+func (h *Hub) HandleClientMessage(client *Client, rawMessage []byte) {
+	var message struct {
+		Type    string `json:"type"`
+		Content string `json:"content"`
+		ChatID  string `json:"chatId"`
+	}
+
+	if err := json.Unmarshal(rawMessage, &message); err != nil {
+		log.Printf("Error parsing message from client %s: %v", client.userID, err)
+		return
+	}
+
+	switch message.Type {
+	case "message":
+		h.HandleChatMessage(client, message.Content, message.ChatID)
+	case "typing":
+		h.HandleTypingIndicator(client, message.Content, message.ChatID)
+	case "join_room":
+		h.HandleJoinRoom(client, message.ChatID)
+	case "leave_room":
+		h.HandleLeaveRoom(client, message.ChatID)
+	case "create_room":
+		h.HandleCreateRoom(client, message.Content)
+	case "get_rooms":
+		h.HandleGetRooms(client)
+	default:
+		log.Printf("Unknown message type from client %s: %s", client.userID, message.Type)
+	}
+}
+
+// HandleChatMessage processes and broadcasts chat messages
+func (h *Hub) HandleChatMessage(client *Client, content, chatID string) {
+
+	if content == "" {
+		return
+	}
+
+	messageID, err := generateUUID()
+	if err != nil {
+		fmt.Printf("Error generating message ID: %v", err)
+		return
+	}
+
+	// Create the message to broadcast
+	chatMessage := map[string]interface{}{
+		"type":      "message",
+		"id":        messageID,
+		"userId":    client.userID,
+		"username":  client.username,
+		"content":   content,
+		"chatID":    chatID,
+		"timestamp": time.Now(),
+	}
+
+	log.Printf("Broadcasting message from %s in room %s: %s",
+		client.username, chatID, content)
+
+	// Broadcast to all clients in the room
+	h.BroadcastToRoom(chatID, chatMessage)
+}
+
+// HandleTypingIndicator broadcasts typing status
+func (h *Hub) HandleTypingIndicator(client *Client, typing, roomID string) {
+	typingMessage := map[string]interface{}{
+		"type":      "typing",
+		"userId":    client.userID,
+		"username":  client.username,
+		"roomId":    roomID,
+		"typing":    typing == "true",
+		"timestamp": time.Now(),
+	}
+
+	h.BroadcastToRoom(roomID, typingMessage)
+}
+
+// HandleJoinRoom handles room joining
+func (h *Hub) HandleJoinRoom(client *Client, roomID string) {
+	h.JoinRoom(roomID, client.userID, client)
+
+	// Notify room about new user
+	joinMessage := map[string]interface{}{
+		"type":      "user_joined",
+		"userId":    client.userID,
+		"username":  client.username,
+		"message":   client.username + " joined the room",
+		"roomId":    roomID,
+		"timestamp": time.Now(),
+	}
+
+	h.BroadcastToRoom(roomID, joinMessage)
+}
+
+// HandleLeaveRoom handles room leaving
+func (h *Hub) HandleLeaveRoom(client *Client, roomID string) {
+	h.LeaveRoom(roomID, client.userID)
+
+	leaveMessage := map[string]interface{}{
+		"type":      "user_left",
+		"userId":    client.userID,
+		"username":  client.username,
+		"message":   client.username + " left the room",
+		"roomId":    roomID,
+		"timestamp": time.Now(),
+	}
+
+	h.BroadcastToRoom(roomID, leaveMessage)
+}
+
+// HandleCreateRoom handles room creation
+func (h *Hub) HandleCreateRoom(client *Client, roomName string) {
+
+	roomID, err := generateUUID()
+	if err != nil {
+		fmt.Printf("Error generating room id: %v", err)
+		return
+	}
+
+	h.CreateRoom(roomID, roomName)
+	h.JoinRoom(roomID, client.userID, client)
+
+	// Notify about room creation
+	roomMessage := map[string]interface{}{
+		"type":      "room_created",
+		"roomId":    roomID,
+		"roomName":  roomName,
+		"userId":    client.userID,
+		"username":  client.username,
+		"timestamp": time.Now(),
+	}
+
+	h.BroadcastToAll(roomMessage)
+}
+
+// HandleGetRooms handles room list requests
+func (h *Hub) HandleGetRooms(client *Client) {
+	roomList := h.GetRoomList()
+
+	response := map[string]interface{}{
+		"type":     "room_list",
+		"roomList": roomList,
+	}
+
+	if err := client.SendMessage(response); err != nil {
+		log.Printf("Failed to send room list to client %s: %v", client.userID, err)
+	}
+}
+
+func generateUUID() (string, error) {
+	u7, err2 := uuid.NewV7()
+	if err2 != nil {
+		return "", fmt.Errorf("error generating UUIDv7: %w", err2)
+	}
+	return u7.String(), nil
 }

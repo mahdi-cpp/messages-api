@@ -54,6 +54,7 @@ type Config struct {
 
 // NewChatClient creates a new chat client instance
 func NewChatClient(config Config) *ChatClient {
+
 	if config.UserID == "" {
 		config.UserID = uuid.New().String()
 	}
@@ -165,7 +166,7 @@ func (c *ChatClient) handleMessages() {
 func (c *ChatClient) handleMessage(msg Message) {
 	switch msg.Type {
 	case "message":
-		log.Printf("[%s] %s: %s", msg.ChatID, msg.Username, msg.Content)
+		log.Printf("{ChatID:%s} %s: %s", msg.ChatID, msg.Username, msg.Content)
 	case "system":
 		log.Printf("SYSTEM: %s", msg.Content)
 	case "user_joined":

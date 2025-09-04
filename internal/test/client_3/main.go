@@ -17,7 +17,7 @@ func main() {
 	config := client.Config{
 		ServerURL: "ws://localhost:8089/ws",
 		UserID:    "user_4",
-		Username:  "GoClientUser_4",
+		Username:  "mahdi_4",
 		Timeout:   30 * time.Second,
 	}
 
