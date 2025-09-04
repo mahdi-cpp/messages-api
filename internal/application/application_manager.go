@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"log"
+	"net/http"
 	"sync"
 	"time"
 
@@ -12,6 +13,14 @@ import (
 	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
 	"github.com/mahdi-cpp/messages-api/internal/hub"
 )
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
 type Manager struct {
 	mu           sync.RWMutex
@@ -35,7 +44,7 @@ func NewApplicationManager() (*Manager, error) {
 
 	manager.hub = hub.NewHub()
 	go manager.hub.Run()
-	
+
 	var err error
 	manager.chats, err = collection_manager_v3.NewCollectionManager[*chat.Chat]("/app/iris/com.iris.message/chats/metadata", false)
 	if err != nil {
@@ -55,7 +64,16 @@ func (m *Manager) loadChatContent(chatID string) {
 	m.chatManagers[chatID] = chatManager
 }
 
-func (m *Manager) CreateClient(conn *websocket.Conn, userID string, username string) {
+func (m *Manager) CreateWebsocketClient(w http.ResponseWriter, r *http.Request, userID string, username string) {
+
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("WebSocket upgrade failed: %v", err)
+		http.Error(w, "WebSocket upgrade failed", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("WebSocket connection established for user: %s (%s)", username, userID)
 
 	client := hub.NewClient(m.hub, conn, userID)
 	m.hub.RegisterClient(client)

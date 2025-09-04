@@ -8,27 +8,46 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/mahdi-cpp/messages-api/internal/client"
 )
 
+func generateUUID() (string, error) {
+	u7, err2 := uuid.NewV7()
+	if err2 != nil {
+		return "", fmt.Errorf("error generating UUIDv7: %w", err2)
+	}
+	return u7.String(), nil
+}
+
 func main() {
 
-	// Configuration
+	userID, err := generateUUID()
+	if err != nil {
+		return
+	}
+
 	config := client.Config{
 		ServerURL: "ws://localhost:8089/ws",
-		UserID:    "user_2",
-		Username:  "mahdi_2",
+		UserID:    "userID_" + userID,
 		Timeout:   30 * time.Second,
 	}
 
-	// Create client
-	chatClient := client.NewChatClient(config)
+	chatClient, err := client.NewChatClient(config)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	// Connect to server
 	if err := chatClient.Connect(); err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
-	defer chatClient.Close()
+	defer func(chatClient *client.ChatClient) {
+		err := chatClient.Close()
+		if err != nil {
+		}
+	}(chatClient)
 
 	fmt.Println("=== Go Chat Client ===")
 	fmt.Println("Commands:")
@@ -38,10 +57,11 @@ func main() {
 	fmt.Println("  /list           - List available chats")
 	fmt.Println("  /chats          - Show joined chats")
 	fmt.Println("  /current        - Show current chat")
+	fmt.Println("  /typing         - Show is typing to other users")
 	fmt.Println("  /exit           - Exit the client")
 	fmt.Println("  /help           - Show this help")
 	fmt.Println()
-	fmt.Printf("Connected as: %s\n", config.Username)
+	fmt.Printf("Connected as: %s\n", config.UserID)
 	fmt.Printf("Current chat: %s\n", chatClient.GetCurrentChat())
 	fmt.Println("Type your message and press Enter to send:")
 	fmt.Println()
@@ -125,12 +145,23 @@ func handleCommand(chatClient *client.ChatClient, command string) {
 		chats := chatClient.GetChats()
 		fmt.Printf("Joined chats: %v\n", chats)
 
+	case "/typing":
+		err := chatClient.SendTypingIndicator(true)
+		if err != nil {
+			log.Printf("Failed to typing chat: %v", err)
+		} else {
+			fmt.Printf("sent typing command:\n")
+		}
+
 	case "/current":
 		fmt.Printf("Current chat: %s\n", chatClient.GetCurrentChat())
 
 	case "/exit":
 		fmt.Println("Goodbye!")
-		chatClient.Close()
+		err := chatClient.Close()
+		if err != nil {
+			return
+		}
 		os.Exit(0)
 
 	case "/help":

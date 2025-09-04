@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -48,33 +47,32 @@ type Message struct {
 type Config struct {
 	ServerURL string
 	UserID    string
-	Username  string
 	Timeout   time.Duration
 }
 
 // NewChatClient creates a new chat client instance
-func NewChatClient(config Config) *ChatClient {
+func NewChatClient(config Config) (*ChatClient, error) {
 
 	if config.UserID == "" {
-		config.UserID = uuid.New().String()
+		return nil, errors.New("user id is required")
 	}
-	if config.Username == "" {
-		config.Username = "user_" + config.UserID[:8]
-	}
+	//if config.Username == "" {
+	//	return nil, errors.New("username is required")
+	//}
 	if config.Timeout == 0 {
 		config.Timeout = 30 * time.Second
 	}
 
 	return &ChatClient{
-		serverURL:   config.ServerURL,
-		userID:      config.UserID,
-		username:    config.Username,
+		serverURL: config.ServerURL,
+		userID:    config.UserID,
+		//username:    config.Username,
 		messageChan: make(chan Message, 100),
 		errorChan:   make(chan error, 10),
 		closeChan:   make(chan struct{}),
 		chats:       make(map[string]bool),
 		currentChat: "general",
-	}
+	}, nil
 }
 
 // Connect establishes a connection to the chat server
@@ -164,6 +162,7 @@ func (c *ChatClient) handleMessages() {
 
 // handleMessage processes different message types
 func (c *ChatClient) handleMessage(msg Message) {
+
 	switch msg.Type {
 	case "message":
 		log.Printf("{ChatID:%s} %s: %s", msg.ChatID, msg.Username, msg.Content)
@@ -174,9 +173,9 @@ func (c *ChatClient) handleMessage(msg Message) {
 	case "user_left":
 		log.Printf("<- %s left the chat", msg.Username)
 	case "typing":
-		if msg.Content == "true" {
-			log.Printf("%s is typing...", msg.Username)
-		}
+		//if msg.Content == "true" {
+		log.Printf("%s is typing...", msg.Username)
+		//}
 	case "chat_joined":
 		log.Printf("Joined chat: %s", msg.ChatID)
 	case "chat_list":
@@ -208,7 +207,7 @@ func (c *ChatClient) SendMessage(content string) error {
 	return c.sendJSON(message)
 }
 
-// JoinChat joins a specific chat chat
+// JoinChat joins a specific chat
 func (c *ChatClient) JoinChat(chatID string) error {
 	if !c.isConnected {
 		return errors.New("not connected to server")
@@ -233,7 +232,7 @@ func (c *ChatClient) JoinChat(chatID string) error {
 	return nil
 }
 
-// LeaveChat leaves a specific chat chat
+// LeaveChat leaves a specific chat
 func (c *ChatClient) LeaveChat(chatID string) error {
 	if !c.isConnected {
 		return errors.New("not connected to server")
@@ -260,7 +259,7 @@ func (c *ChatClient) LeaveChat(chatID string) error {
 	return nil
 }
 
-// CreateChat creates a new chat chat
+// CreateChat creates a new chat
 func (c *ChatClient) CreateChat(chatName string) error {
 	if !c.isConnected {
 		return errors.New("not connected to server")
@@ -294,6 +293,7 @@ func (c *ChatClient) ListChats() error {
 
 // SendTypingIndicator sends a typing indicator
 func (c *ChatClient) SendTypingIndicator(typing bool) error {
+
 	if !c.isConnected {
 		return errors.New("not connected to server")
 	}
@@ -369,7 +369,10 @@ func (c *ChatClient) WaitForInterrupt() {
 
 	<-interrupt
 	log.Println("Received interrupt signal, closing connection...")
-	c.Close()
+	err := c.Close()
+	if err != nil {
+		return
+	}
 }
 
 // generateChatID creates a URL-friendly chat ID from a name

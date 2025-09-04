@@ -2,20 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
-	"github.com/gorilla/websocket"
 	"github.com/mahdi-cpp/messages-api/internal/application"
 )
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
 
 // WebSocketHandler handles WebSocket connections
 type WebSocketHandler struct {
@@ -51,14 +41,5 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		username = userID
 	}
 
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("WebSocket upgrade failed: %v", err)
-		http.Error(w, "WebSocket upgrade failed", http.StatusInternalServerError)
-		return
-	}
-
-	log.Printf("WebSocket connection established for user: %s (%s)", username, userID)
-
-	h.appManager.CreateClient(conn, userID, username)
+	h.appManager.CreateWebsocketClient(w, r, userID, username)
 }
