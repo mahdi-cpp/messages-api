@@ -34,7 +34,11 @@ func NewChatManager(chatID string) (*ChatManager, error) {
 	return manager, nil
 }
 
-func (m *ChatManager) fetchMessages(userID string) ([]*message.Message, error) {
+func (m *ChatManager) fetchMessages(chatID string) ([]*message.Message, error) {
+	return nil, nil
+}
+
+func (m *ChatManager) addMessages(chatID string) ([]*message.Message, error) {
 
 	return nil, nil
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -14,6 +15,21 @@ func main() {
 	appManager, err := application.NewApplicationManager()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	chats, err := appManager.GetUserChats("018f3a8b-1b32-7293-c1d4-8765f4d1e2f3")
+	if err != nil {
+		return
+	}
+
+	if len(chats) == 0 {
+		log.Printf("No chat found")
+	} else {
+		fmt.Println("-----------------------")
+		for _, chat := range chats {
+			fmt.Println(chat.Title)
+		}
+		fmt.Println("-----------------------")
 	}
 
 	// Set up HTTP handlers

@@ -58,6 +58,7 @@ func main() {
 	fmt.Println("  /chats          - Show joined chats")
 	fmt.Println("  /current        - Show current chat")
 	fmt.Println("  /typing         - Show is typing to other users")
+	fmt.Println("  /seen           - Show is seen message")
 	fmt.Println("  /exit           - Exit the client")
 	fmt.Println("  /help           - Show this help")
 	fmt.Println()
@@ -152,7 +153,13 @@ func handleCommand(chatClient *client.ChatClient, command string) {
 		} else {
 			fmt.Printf("sent typing command:\n")
 		}
-
+	case "/seen":
+		err := chatClient.SendSeenIndicator()
+		if err != nil {
+			log.Printf("Failed to seen chat: %v", err)
+		} else {
+			fmt.Printf("sent seen command:\n")
+		}
 	case "/current":
 		fmt.Printf("Current chat: %s\n", chatClient.GetCurrentChat())
 

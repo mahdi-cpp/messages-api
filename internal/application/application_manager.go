@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/mahdi-cpp/iris-tools/collection_manager_v3"
 	"github.com/mahdi-cpp/iris-tools/image_loader"
+	"github.com/mahdi-cpp/iris-tools/search"
 	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
 	"github.com/mahdi-cpp/messages-api/internal/hub"
 )
@@ -18,16 +19,16 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  1024 * 10,
+	WriteBufferSize: 1024 * 10,
 }
 
 type Manager struct {
 	mu           sync.RWMutex
-	hub          *hub.Hub
 	usersStatus  map[string]*UserStatusData //key is userID
 	chats        *collection_manager_v3.Manager[*chat.Chat]
 	chatManagers map[string]*ChatManager // Maps chatIDs to their ChatManager
+	hub          *hub.Hub
 	iconLoader   *image_loader.ImageLoader
 	ctx          context.Context
 }
@@ -46,12 +47,40 @@ func NewApplicationManager() (*Manager, error) {
 	go manager.hub.Run()
 
 	var err error
-	manager.chats, err = collection_manager_v3.NewCollectionManager[*chat.Chat]("/app/iris/com.iris.message/chats/metadata", false)
+	manager.chats, err = collection_manager_v3.NewCollectionManager[*chat.Chat]("/app/iris/com.iris.messages/chats/metadata", true)
 	if err != nil {
 		panic(err)
 	}
 
 	return manager, nil
+}
+
+func (m *Manager) GetUserChats(userID string) ([]*chat.Chat, error) {
+
+	chats, err := m.chats.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	//searchOptions := &chat.SearchOptions{
+	//	Offset: 0,
+	//	Limit:  10,
+	//}
+	//filterChats := chat.Search(chats, searchOptions)
+
+	var filterChats []*chat.Chat
+	results := search.Find(chats, chat.HasMemberWith(chat.MemberWithUserID(userID)))
+
+	lessFn := chat.GetLessFunc("updatedAt", "start")
+	if lessFn != nil {
+		search.SortIndexedItems(results, lessFn)
+	}
+
+	for _, result := range results {
+		filterChats = append(filterChats, result.Value)
+	}
+
+	return filterChats, nil
 }
 
 func (m *Manager) loadChatContent(chatID string) {
@@ -77,9 +106,6 @@ func (m *Manager) CreateWebsocketClient(w http.ResponseWriter, r *http.Request, 
 
 	client := hub.NewClient(m.hub, conn, userID)
 	m.hub.RegisterClient(client)
-
-	// Set user info in client (you'll need to add this field to Client struct)
-	client.SetUserInfo(username)
 
 	go client.WritePump()
 	go client.ReadPump()

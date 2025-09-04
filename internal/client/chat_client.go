@@ -19,7 +19,7 @@ type ChatClient struct {
 	conn         *websocket.Conn
 	serverURL    string
 	userID       string
-	username     string
+	UserID       string
 	messageChan  chan Message
 	errorChan    chan error
 	closeChan    chan struct{}
@@ -35,7 +35,6 @@ type Message struct {
 	Type      string    `json:"type"`
 	ID        string    `json:"id,omitempty"`
 	UserID    string    `json:"userId,omitempty"`
-	Username  string    `json:"username,omitempty"`
 	Content   string    `json:"content,omitempty"`
 	ChatID    string    `json:"chatId,omitempty"`
 	Timestamp time.Time `json:"timestamp,omitempty"`
@@ -56,8 +55,8 @@ func NewChatClient(config Config) (*ChatClient, error) {
 	if config.UserID == "" {
 		return nil, errors.New("user id is required")
 	}
-	//if config.Username == "" {
-	//	return nil, errors.New("username is required")
+	//if config.UserID == "" {
+	//	return nil, errors.New("UserID is required")
 	//}
 	if config.Timeout == 0 {
 		config.Timeout = 30 * time.Second
@@ -66,7 +65,7 @@ func NewChatClient(config Config) (*ChatClient, error) {
 	return &ChatClient{
 		serverURL: config.ServerURL,
 		userID:    config.UserID,
-		//username:    config.Username,
+		//UserID:    config.UserID,
 		messageChan: make(chan Message, 100),
 		errorChan:   make(chan error, 10),
 		closeChan:   make(chan struct{}),
@@ -87,7 +86,7 @@ func (c *ChatClient) Connect() error {
 	// Add query parameters
 	q := u.Query()
 	q.Add("user_id", c.userID)
-	q.Add("username", c.username)
+	q.Add("UserID", c.UserID)
 	u.RawQuery = q.Encode()
 
 	// Establish WebSocket connection
@@ -104,7 +103,7 @@ func (c *ChatClient) Connect() error {
 	c.isConnected = true
 
 	log.Printf("Connected to chat server: %s", c.serverURL)
-	log.Printf("User: %s (%s)", c.username, c.userID)
+	log.Printf("User: %s (%s)", c.UserID, c.userID)
 
 	// Start message handlers
 	go c.readPump()
@@ -165,17 +164,17 @@ func (c *ChatClient) handleMessage(msg Message) {
 
 	switch msg.Type {
 	case "message":
-		log.Printf("{ChatID:%s} %s: %s", msg.ChatID, msg.Username, msg.Content)
+		log.Printf("{ChatID:%s} %s: %s", msg.ChatID, msg.UserID, msg.Content)
 	case "system":
 		log.Printf("SYSTEM: %s", msg.Content)
 	case "user_joined":
-		log.Printf("-> %s joined the chat", msg.Username)
+		log.Printf("-> %s joined the chat", msg.UserID)
 	case "user_left":
-		log.Printf("<- %s left the chat", msg.Username)
+		log.Printf("<- %s left the chat", msg.UserID)
 	case "typing":
-		//if msg.Content == "true" {
-		log.Printf("%s is typing...", msg.Username)
-		//}
+		log.Printf("%s is typing...", msg.UserID)
+	case "seen":
+		log.Printf("%s is seen message", msg.UserID)
 	case "chat_joined":
 		log.Printf("Joined chat: %s", msg.ChatID)
 	case "chat_list":
@@ -200,7 +199,6 @@ func (c *ChatClient) SendMessage(content string) error {
 		Content:   content,
 		ChatID:    c.currentChat,
 		UserID:    c.userID,
-		Username:  c.username,
 		Timestamp: time.Now(),
 	}
 
@@ -268,11 +266,10 @@ func (c *ChatClient) CreateChat(chatName string) error {
 	chatID := generateChatID(chatName)
 
 	message := Message{
-		Type:     "create_chat",
-		ChatID:   chatID,
-		Content:  chatName,
-		UserID:   c.userID,
-		Username: c.username,
+		Type:    "create_chat",
+		ChatID:  chatID,
+		Content: chatName,
+		UserID:  c.userID,
 	}
 
 	return c.sendJSON(message)
@@ -303,6 +300,21 @@ func (c *ChatClient) SendTypingIndicator(typing bool) error {
 		ChatID:  c.currentChat,
 		UserID:  c.userID,
 		Content: fmt.Sprintf("%t", typing),
+	}
+
+	return c.sendJSON(message)
+}
+
+func (c *ChatClient) SendSeenIndicator() error {
+
+	if !c.isConnected {
+		return errors.New("not connected to server")
+	}
+
+	message := Message{
+		Type:   "seen",
+		ChatID: c.currentChat,
+		UserID: c.userID,
 	}
 
 	return c.sendJSON(message)

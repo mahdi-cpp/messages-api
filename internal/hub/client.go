@@ -2,7 +2,6 @@ package hub
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"sync"
 	"time"
@@ -10,21 +9,14 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// ErrClientSendBufferFull Custom errors
-var (
-	ErrClientSendBufferFull = errors.New("client send buffer is full")
-)
-
 // Client represents a connected user
 type Client struct {
-	hub      *Hub
-	conn     *websocket.Conn
-	userID   string
-	username string
-	send     chan []byte
-	chats    map[string]bool // Track which chats the user is in
-	//messageHandler func(*Client, []byte) // Add this field
-	mutex sync.RWMutex
+	hub    *Hub
+	conn   *websocket.Conn
+	userID string
+	send   chan []byte
+	chats  map[string]bool // Track which chats the user is in
+	mutex  sync.RWMutex
 }
 
 // NewClient creates a new client instance
@@ -191,196 +183,6 @@ func (c *Client) handleMessage(rawMessage []byte) {
 //	}
 //}
 
-// handleTypingMessage processes typing indicators
-func (c *Client) handleTypingMessage(rawMessage []byte) {
-	var typingStatus struct {
-		ChatID string `json:"chatId"`
-		Typing bool   `json:"typing"`
-	}
-
-	if err := json.Unmarshal(rawMessage, &typingStatus); err != nil {
-		log.Printf("Error parsing typing status from client %s: %v", c.userID, err)
-		return
-	}
-
-	// Broadcast typing status to all users in the chat
-	c.hub.BroadcastToChat(typingStatus.ChatID, map[string]interface{}{
-		"type":   "typing",
-		"userId": c.userID,
-		"chatId": typingStatus.ChatID,
-		"typing": typingStatus.Typing,
-	})
-}
-
-// handleChatMessage processes chat message
-func (c *Client) handleChatMessage(rawMessage []byte) {
-
-	var message struct {
-		Content string `json:"content"`
-		ChatID  string `json:"chatId"`
-	}
-
-	if err := json.Unmarshal(rawMessage, &message); err != nil {
-		log.Printf("Error parsing chat message from client %s: %v", c.userID, err)
-		return
-	}
-
-	chatID, err := generateUUID()
-	if err != nil {
-		return
-	}
-
-	// Create message with metadata
-	chatMessage := map[string]interface{}{
-		"type":      "message",
-		"id":        chatID,
-		"userId":    c.userID,
-		"content":   message.Content,
-		"chatId":    "message.ChatID_12",
-		"timestamp": time.Now(),
-	}
-
-	// Broadcast message to all users in the chat
-	c.hub.BroadcastToChat(message.ChatID, chatMessage)
-
-	log.Printf("Message from client %s in chat %s: %s", c.userID, message.ChatID, message.Content)
-}
-
-// handleJoinChat processes chat join requests
-func (c *Client) handleJoinChat(rawMessage []byte) {
-
-	var joinRequest struct {
-		ChatID string `json:"chatId"`
-	}
-
-	if err := json.Unmarshal(rawMessage, &joinRequest); err != nil {
-		log.Printf("Error parsing join_chat request from client %s: %v", c.userID, err)
-		return
-	}
-
-	// Join the chat through the hub
-	c.hub.JoinChat(joinRequest.ChatID, c.userID, c)
-
-	// Send confirmation to client
-	confirmation := map[string]interface{}{
-		"type":    "chat_joined",
-		"chatId":  joinRequest.ChatID,
-		"success": true,
-	}
-
-	if message, err := json.Marshal(confirmation); err == nil {
-		c.send <- message
-	}
-
-	log.Printf("Client %s joined chat %s", c.userID, joinRequest.ChatID)
-}
-
-// handleLeaveChat processes chat leave requests
-func (c *Client) handleLeaveChat(rawMessage []byte) {
-	var leaveRequest struct {
-		ChatID string `json:"chatId"`
-	}
-
-	if err := json.Unmarshal(rawMessage, &leaveRequest); err != nil {
-		log.Printf("Error parsing leave_chat request from client %s: %v", c.userID, err)
-		return
-	}
-
-	// Leave the chat through the hub
-	//c.hub.LeaveChat(leaveRequest.ChatID, c.userID)
-
-	// Send confirmation to client
-	confirmation := map[string]interface{}{
-		"type":    "chat_left",
-		"chatId":  leaveRequest.ChatID,
-		"success": true,
-	}
-
-	if message, err := json.Marshal(confirmation); err == nil {
-		c.send <- message
-	}
-
-	log.Printf("Client %s left chat %s", c.userID, leaveRequest.ChatID)
-}
-
-// handleCreateChat processes chat creation requests
-func (c *Client) handleCreateChat(rawMessage []byte) {
-
-	var createRequest struct {
-		ChatID   string `json:"chatId"`
-		ChatName string `json:"chatName"`
-	}
-
-	if err := json.Unmarshal(rawMessage, &createRequest); err != nil {
-		log.Printf("Error parsing create_chat request from client %s: %v", c.userID, err)
-		return
-	}
-
-	// Create the chat through the hub
-	c.hub.CreateChat(createRequest.ChatID, createRequest.ChatName)
-
-	// Auto-join the chat after creation
-	c.hub.JoinChat(createRequest.ChatID, c.userID, c)
-
-	// Send confirmation to client
-	confirmation := map[string]interface{}{
-		"type":     "chat_created",
-		"chatId":   createRequest.ChatID,
-		"chatName": createRequest.ChatName,
-		"success":  true,
-	}
-
-	if message, err := json.Marshal(confirmation); err == nil {
-		c.send <- message
-	}
-
-	log.Printf("Client %s created chat %s (%s)", c.userID, createRequest.ChatName, createRequest.ChatID)
-}
-
-// handleGetChats sends the list of available chats to the client
-func (c *Client) handleGetChats() {
-	chatList := c.hub.GetChatList()
-
-	response := map[string]interface{}{
-		"type":     "chat_list",
-		"chatList": chatList,
-	}
-
-	if message, err := json.Marshal(response); err == nil {
-		c.send <- message
-	}
-
-	log.Printf("Sent chat list to client %s", c.userID)
-}
-
-// handleGetChatUsers sends the list of users in a specific chat
-func (c *Client) handleGetChatUsers(rawMessage []byte) {
-
-	var request struct {
-		ChatID string `json:"chatId"`
-	}
-
-	if err := json.Unmarshal(rawMessage, &request); err != nil {
-		log.Printf("Error parsing get_chat_users request from client %s: %v", c.userID, err)
-		return
-	}
-
-	// Get users from the hub (you'll need to implement GetChatUsers in hub.go)
-	users := c.hub.GetChatUsers(request.ChatID)
-
-	response := map[string]interface{}{
-		"type":   "chat_users",
-		"chatId": request.ChatID,
-		"users":  users,
-	}
-
-	if message, err := json.Marshal(response); err == nil {
-		c.send <- message
-	}
-
-	log.Printf("Sent user list for chat %s to client %s", request.ChatID, c.userID)
-}
-
 // SendMessage sends a message directly to this client
 func (c *Client) SendMessage(message interface{}) error {
 	messageBytes, err := json.Marshal(message)
@@ -403,21 +205,7 @@ func (c *Client) Close() {
 	c.conn.Close()
 }
 
-// Username returns the client's username
-func (c *Client) Username() string {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
-	return c.username
-}
-
 // UserID returns the client's user ID
 func (c *Client) UserID() string {
 	return c.userID
-}
-
-// SetUserInfo sets the username for the client
-func (c *Client) SetUserInfo(username string) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	c.username = username
 }
