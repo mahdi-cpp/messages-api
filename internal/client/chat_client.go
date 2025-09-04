@@ -78,6 +78,7 @@ func NewChatClient(config Config) *ChatClient {
 
 // Connect establishes a connection to the chat server
 func (c *ChatClient) Connect() error {
+
 	// Parse server URL
 	u, err := url.Parse(c.serverURL)
 	if err != nil {

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/mahdi-cpp/messages-api/internal/hub"
 )
@@ -34,6 +34,7 @@ func NewWebSocketHandler(hub *hub.Hub) *WebSocketHandler {
 
 // ServeHTTP handles HTTP requests and upgrades them to WebSocket
 func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
 	userID := r.URL.Query().Get("user_id")
 	if userID == "" {
 		http.Error(w, "User ID required", http.StatusUnauthorized)
@@ -56,6 +57,9 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	client := hub.NewClient(h.hub, conn, userID)
 	h.hub.RegisterClient(client)
+
+	// Set the message handler for this client
+	client.SetMessageHandler(h.handleClientMessage)
 
 	// Set user info in client (you'll need to add this field to Client struct)
 	client.SetUserInfo(username)
@@ -81,6 +85,7 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // notifyUserJoined sends a notification when a user joins a room
 func (h *WebSocketHandler) notifyUserJoined(userID, username, roomID string) {
+
 	joinMessage := map[string]interface{}{
 		"type":      "user_joined",
 		"userId":    userID,
@@ -96,6 +101,7 @@ func (h *WebSocketHandler) notifyUserJoined(userID, username, roomID string) {
 
 // Handle incoming messages from clients
 func (h *WebSocketHandler) handleClientMessage(client *hub.Client, rawMessage []byte) {
+
 	var message struct {
 		Type    string `json:"type"`
 		Content string `json:"content"`
@@ -147,6 +153,7 @@ func (h *WebSocketHandler) handleChatMessage(client *hub.Client, content, roomID
 
 // handleTypingIndicator broadcasts typing status
 func (h *WebSocketHandler) handleTypingIndicator(client *hub.Client, typing, roomID string) {
+
 	typingMessage := map[string]interface{}{
 		"type":      "typing",
 		"userId":    client.UserID(),
@@ -186,7 +193,13 @@ func (h *WebSocketHandler) handleLeaveRoom(client *hub.Client, roomID string) {
 
 // handleCreateRoom handles room creation
 func (h *WebSocketHandler) handleCreateRoom(client *hub.Client, roomName string) {
-	roomID := generateRoomID(roomName)
+
+	roomID, err := generateRoomID()
+	if err != nil {
+		fmt.Printf("Error generating room id: %v", err)
+		return
+	}
+
 	h.hub.CreateRoom(roomID, roomName)
 	h.hub.JoinRoom(roomID, client.UserID(), client)
 
@@ -214,7 +227,15 @@ func generateMessageID() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
 
-func generateRoomID(name string) string {
-	// Simple implementation - convert to lowercase and replace spaces
-	return strings.ToLower(strings.ReplaceAll(name, " ", "_"))
+//func generateRoomID(name string) string {
+//	// Simple implementation - convert to lowercase and replace spaces
+//	return strings.ToLower(strings.ReplaceAll(name, " ", "_"))
+//}
+
+func generateRoomID() (string, error) {
+	u7, err2 := uuid.NewV7()
+	if err2 != nil {
+		return "", fmt.Errorf("error generating UUIDv7: %w", err2)
+	}
+	return u7.String(), nil
 }

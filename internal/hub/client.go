@@ -5,22 +5,23 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
 // Client represents a connected user
 type Client struct {
-	hub      *Hub
-	conn     *websocket.Conn
-	userID   string
-	username string
-	send     chan []byte
-	rooms    map[string]bool // Track which rooms the user is in
-	mutex    sync.RWMutex
+	hub            *Hub
+	conn           *websocket.Conn
+	userID         string
+	username       string
+	send           chan []byte
+	rooms          map[string]bool       // Track which rooms the user is in
+	messageHandler func(*Client, []byte) // Add this field
+	mutex          sync.RWMutex
 }
 
 // NewClient creates a new client instance
@@ -32,6 +33,13 @@ func NewClient(hub *Hub, conn *websocket.Conn, userID string) *Client {
 		send:   make(chan []byte, 256),
 		rooms:  make(map[string]bool),
 	}
+}
+
+// SetMessageHandler sets the external message handler
+func (c *Client) SetMessageHandler(handler func(*Client, []byte)) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.messageHandler = handler
 }
 
 // IsInRoom checks if the client is in a specific room
@@ -61,6 +69,7 @@ func (c *Client) GetRooms() []string {
 
 // ReadPump handles messages from the WebSocket connection
 func (c *Client) ReadPump() {
+
 	defer func() {
 		// Clean up when client disconnects
 		c.hub.UnregisterClient(c)
@@ -92,6 +101,7 @@ func (c *Client) ReadPump() {
 
 // WritePump sends messages to the WebSocket connection
 func (c *Client) WritePump() {
+
 	ticker := time.NewTicker(54 * time.Second) // Ping interval
 	defer func() {
 		ticker.Stop()
@@ -101,6 +111,7 @@ func (c *Client) WritePump() {
 	for {
 		select {
 		case message, ok := <-c.send:
+
 			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if !ok {
 				// Hub closed the channel
@@ -142,6 +153,21 @@ func (c *Client) handleMessage(rawMessage []byte) {
 	// Instead of handling messages here, forward them to the hub/handler
 	// This ensures consistent message processing
 
+	c.mutex.RLock()
+	handler := c.messageHandler
+	c.mutex.RUnlock()
+
+	if handler != nil {
+		// Use external message handler
+		handler(c, rawMessage)
+	} else {
+		// Fallback to local handling
+		c.handleMessageLocally(rawMessage)
+	}
+}
+
+// handleMessageLocally handles messages when no external handler is set
+func (c *Client) handleMessageLocally(rawMessage []byte) {
 	var baseMessage struct {
 		Type string `json:"type"`
 	}
@@ -151,39 +177,19 @@ func (c *Client) handleMessage(rawMessage []byte) {
 		return
 	}
 
-	// For now, just log the message - the actual handling should be in the WebSocketHandler
-	log.Printf("Received message from client %s: %s", c.userID, string(rawMessage))
-
-	// In a real implementation, you would forward this to the WebSocketHandler
-	// c.hub.HandleClientMessage(c, rawMessage)
-
-	//var baseMessage struct {
-	//	Type string `json:"type"`
-	//}
-	//
-	//if err := json.Unmarshal(rawMessage, &baseMessage); err != nil {
-	//	log.Printf("Error parsing message from client %s: %v", c.userID, err)
-	//	return
-	//}
-	//
-	//switch baseMessage.Type {
-	//case "typing":
-	//	c.handleTypingMessage(rawMessage)
-	//case "message":
-	//	c.handleChatMessage(rawMessage)
-	//case "join_room":
-	//	c.handleJoinRoom(rawMessage)
-	//case "leave_room":
-	//	c.handleLeaveRoom(rawMessage)
-	//case "create_room":
-	//	c.handleCreateRoom(rawMessage)
-	//case "get_rooms":
-	//	c.handleGetRooms()
-	//case "get_room_users":
-	//	c.handleGetRoomUsers(rawMessage)
-	//default:
-	//	log.Printf("Unknown message type from client %s: %s", c.userID, baseMessage.Type)
-	//}
+	// Basic local handling for critical messages
+	switch baseMessage.Type {
+	case "ping":
+		// Respond to ping
+		err := c.SendMessage(map[string]interface{}{
+			"type": "pong",
+		})
+		if err != nil {
+			return
+		}
+	default:
+		log.Printf("No message handler for type: %s from client %s", baseMessage.Type, c.userID)
+	}
 }
 
 // handleTypingMessage processes typing indicators
@@ -220,10 +226,15 @@ func (c *Client) handleChatMessage(rawMessage []byte) {
 		return
 	}
 
+	chatID, err := generateUUID()
+	if err != nil {
+		return
+	}
+
 	// Create message with metadata
 	chatMessage := map[string]interface{}{
 		"type":      "message",
-		"id":        generateUUID(),
+		"id":        chatID,
 		"userId":    c.userID,
 		"content":   message.Content,
 		"chatId":    message.ChatID,
@@ -345,6 +356,7 @@ func (c *Client) handleGetRooms() {
 
 // handleGetRoomUsers sends the list of users in a specific room
 func (c *Client) handleGetRoomUsers(rawMessage []byte) {
+
 	var request struct {
 		RoomID string `json:"roomId"`
 	}
@@ -392,12 +404,6 @@ func (c *Client) Close() {
 	c.conn.Close()
 }
 
-// generateUUID generates a unique identifier for messages
-func generateUUID() string {
-	// This is a simple UUID implementation. In production, use a proper UUID library.
-	return fmt.Sprintf("%d-%d", time.Now().UnixNano(), rand.Int63())
-}
-
 // ErrClientSendBufferFull Custom errors
 var (
 	ErrClientSendBufferFull = errors.New("client send buffer is full")
@@ -420,4 +426,15 @@ func (c *Client) SetUserInfo(username string) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.username = username
+}
+
+// generateUUID generates a unique identifier for messages
+func generateUUID() (string, error) {
+
+	u7, err2 := uuid.NewV7()
+	if err2 != nil {
+		return "", fmt.Errorf("error generating UUIDv7: %w", err2)
+	}
+
+	return u7.String(), nil
 }
