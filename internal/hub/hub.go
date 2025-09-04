@@ -10,17 +10,17 @@ import (
 	"github.com/google/uuid"
 )
 
-// Room represents a chat room
-type Room struct {
+// Chat represents a chat chat
+type Chat struct {
 	ID        string
 	Name      string
 	Clients   map[string]*Client // userID -> Client
 	CreatedAt time.Time
 }
 
-// Hub manages all connected clients and rooms
+// Hub manages all connected clients and chats
 type Hub struct {
-	rooms     map[string]*Room
+	chats     map[string]*Chat
 	clients   map[string]*Client // userID -> Client
 	mutex     sync.RWMutex
 	startTime time.Time
@@ -29,13 +29,13 @@ type Hub struct {
 // NewHub creates a new Hub instance
 func NewHub() *Hub {
 	hub := &Hub{
-		rooms:     make(map[string]*Room),
+		chats:     make(map[string]*Chat),
 		clients:   make(map[string]*Client),
 		startTime: time.Now(),
 	}
 
-	// Create default room
-	hub.CreateRoom("general", "General Chat")
+	// Create default chat
+	hub.CreateChat("general", "General Chat")
 
 	return hub
 }
@@ -48,7 +48,7 @@ func (h *Hub) Run() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		h.CleanupInactiveRooms()
+		h.CleanupInactiveChats()
 	}
 }
 
@@ -61,16 +61,16 @@ func (h *Hub) RegisterClient(client *Client) {
 	log.Printf("Client registered: %s. Total clients: %d", client.userID, len(h.clients))
 }
 
-// UnregisterClient removes a client from the hub and all rooms
+// UnregisterClient removes a client from the hub and all chats
 func (h *Hub) UnregisterClient(client *Client) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	// Remove client from all rooms
-	for roomID := range client.rooms {
-		if room, exists := h.rooms[roomID]; exists {
-			delete(room.Clients, client.userID)
-			log.Printf("Client %s removed from room %s", client.userID, roomID)
+	// Remove client from all chats
+	for chatID := range client.chats {
+		if chat, exists := h.chats[chatID]; exists {
+			delete(chat.Clients, client.userID)
+			log.Printf("Client %s removed from chat %s", client.userID, chatID)
 		}
 	}
 
@@ -79,71 +79,71 @@ func (h *Hub) UnregisterClient(client *Client) {
 	log.Printf("Client unregistered: %s. Remaining clients: %d", client.userID, len(h.clients))
 }
 
-// LeaveRoom removes a client from a specific room
-func (h *Hub) LeaveRoom(roomID, userID string) {
+// LeaveChat removes a client from a specific chat
+func (h *Hub) LeaveChat(chatID, userID string) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	if room, exists := h.rooms[roomID]; exists {
-		if _, clientExists := room.Clients[userID]; clientExists {
-			delete(room.Clients, userID)
-			log.Printf("User %s left room %s. Users remaining: %d", userID, roomID, len(room.Clients))
+	if chat, exists := h.chats[chatID]; exists {
+		if _, clientExists := chat.Clients[userID]; clientExists {
+			delete(chat.Clients, userID)
+			log.Printf("User %s left chat %s. Users remaining: %d", userID, chatID, len(chat.Clients))
 
-			// Also remove from client's room list
+			// Also remove from client's chat list
 			if client, clientExists := h.clients[userID]; clientExists {
-				client.LeaveRoom(roomID)
+				client.LeaveChat(chatID)
 			}
 		} else {
-			log.Printf("User %s not found in room %s", userID, roomID)
+			log.Printf("User %s not found in chat %s", userID, chatID)
 		}
 	} else {
-		log.Printf("Room %s not found", roomID)
+		log.Printf("Chat %s not found", chatID)
 	}
 }
 
-// JoinRoom adds a client to a room
-func (h *Hub) JoinRoom(roomID, userID string, client *Client) {
+// JoinChat adds a client to a chat
+func (h *Hub) JoinChat(chatID, userID string, client *Client) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	// Ensure room exists
-	if _, exists := h.rooms[roomID]; !exists {
-		log.Printf("Room %s does not exist, creating it", roomID)
-		h.rooms[roomID] = &Room{
-			ID:        roomID,
-			Name:      roomID, // Use ID as name for auto-created rooms
+	// Ensure chat exists
+	if _, exists := h.chats[chatID]; !exists {
+		log.Printf("Chat %s does not exist, creating it", chatID)
+		h.chats[chatID] = &Chat{
+			ID:        chatID,
+			Name:      chatID, // Use ID as name for auto-created chats
 			Clients:   make(map[string]*Client),
 			CreatedAt: time.Now(),
 		}
 	}
 
-	room := h.rooms[roomID]
+	chat := h.chats[chatID]
 
-	// Add client to the room
-	room.Clients[userID] = client
-	client.JoinRoom(roomID)
+	// Add client to the chat
+	chat.Clients[userID] = client
+	client.JoinChat(chatID)
 
-	log.Printf("User %s joined room %s (Total in room: %d)", userID, roomID, len(room.Clients))
+	log.Printf("User %s joined chat %s (Total in chat: %d)", userID, chatID, len(chat.Clients))
 }
 
-// CreateRoom creates a new chat room
-func (h *Hub) CreateRoom(roomID, roomName string) {
+// CreateChat creates a new chat chat
+func (h *Hub) CreateChat(chatID, chatName string) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	if _, exists := h.rooms[roomID]; !exists {
-		h.rooms[roomID] = &Room{
-			ID:        roomID,
-			Name:      roomName,
+	if _, exists := h.chats[chatID]; !exists {
+		h.chats[chatID] = &Chat{
+			ID:        chatID,
+			Name:      chatName,
 			Clients:   make(map[string]*Client),
 			CreatedAt: time.Now(),
 		}
-		log.Printf("Room created: %s (%s). Total rooms: %d", roomName, roomID, len(h.rooms))
+		log.Printf("Chat created: %s (%s). Total chats: %d", chatName, chatID, len(h.chats))
 	}
 }
 
-// BroadcastToRoom sends a message to all clients in a room
-func (h *Hub) BroadcastToRoom(roomID string, message interface{}) {
+// BroadcastToChat sends a message to all clients in a chat
+func (h *Hub) BroadcastToChat(chatID string, message interface{}) {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
@@ -154,43 +154,43 @@ func (h *Hub) BroadcastToRoom(roomID string, message interface{}) {
 		return
 	}
 
-	if room, exists := h.rooms[roomID]; exists {
-		for userID, client := range room.Clients {
+	if chat, exists := h.chats[chatID]; exists {
+		for userID, client := range chat.Clients {
 			// Check if client is still connected and channel is not full
 			select {
 			case client.send <- messageBytes:
 				// Message sent successfully
-				log.Printf("Message sent to user %s in room %s", userID, roomID)
+				log.Printf("Message sent to user %s in chat %s", userID, chatID)
 			default:
 				// Channel is full, client might be disconnected
 				log.Printf("Client %s send buffer full, potentially disconnected", userID)
 			}
 		}
 	} else {
-		log.Printf("Room %s not found for broadcasting", roomID)
+		log.Printf("Chat %s not found for broadcasting", chatID)
 	}
 }
 
-// GetRoomList returns a map of room IDs to room names
-func (h *Hub) GetRoomList() map[string]string {
+// GetChatList returns a map of chat IDs to chat names
+func (h *Hub) GetChatList() map[string]string {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
-	roomList := make(map[string]string)
-	for id, room := range h.rooms {
-		roomList[id] = room.Name
+	chatList := make(map[string]string)
+	for id, chat := range h.chats {
+		chatList[id] = chat.Name
 	}
-	return roomList
+	return chatList
 }
 
-// GetRoomUsers returns the list of user IDs in a specific room
-func (h *Hub) GetRoomUsers(roomID string) []string {
+// GetChatUsers returns the list of user IDs in a specific chat
+func (h *Hub) GetChatUsers(chatID string) []string {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
-	if room, exists := h.rooms[roomID]; exists {
-		users := make([]string, 0, len(room.Clients))
-		for userID := range room.Clients {
+	if chat, exists := h.chats[chatID]; exists {
+		users := make([]string, 0, len(chat.Clients))
+		for userID := range chat.Clients {
 			users = append(users, userID)
 		}
 		return users
@@ -205,17 +205,17 @@ func (h *Hub) GetClientCount() int {
 	return len(h.clients)
 }
 
-// GetRoomStats returns statistics for all rooms
-func (h *Hub) GetRoomStats() map[string]interface{} {
+// GetChatStats returns statistics for all chats
+func (h *Hub) GetChatStats() map[string]interface{} {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
 	stats := make(map[string]interface{})
-	for roomID, room := range h.rooms {
-		stats[roomID] = map[string]interface{}{
-			"name":       room.Name,
-			"user_count": len(room.Clients),
-			"created_at": room.CreatedAt,
+	for chatID, chat := range h.chats {
+		stats[chatID] = map[string]interface{}{
+			"name":       chat.Name,
+			"user_count": len(chat.Clients),
+			"created_at": chat.CreatedAt,
 		}
 	}
 	return stats
@@ -233,28 +233,28 @@ func (h *Hub) GetHubStats() map[string]interface{} {
 
 	return map[string]interface{}{
 		"total_clients": len(h.clients),
-		"total_rooms":   len(h.rooms),
+		"total_chats":   len(h.chats),
 		"uptime":        time.Since(h.startTime).String(),
 		"start_time":    h.startTime,
-		"room_stats":    h.GetRoomStats(),
+		"chat_stats":    h.GetChatStats(),
 	}
 }
 
-// GetRoom returns a room by ID
-func (h *Hub) GetRoom(roomID string) (*Room, bool) {
+// GetChat returns a chat by ID
+func (h *Hub) GetChat(chatID string) (*Chat, bool) {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
-	room, exists := h.rooms[roomID]
-	return room, exists
+	chat, exists := h.chats[chatID]
+	return chat, exists
 }
 
-// RoomExists checks if a room exists
-func (h *Hub) RoomExists(roomID string) bool {
+// ChatExists checks if a chat exists
+func (h *Hub) ChatExists(chatID string) bool {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
-	_, exists := h.rooms[roomID]
+	_, exists := h.chats[chatID]
 	return exists
 }
 
@@ -288,53 +288,53 @@ func (h *Hub) BroadcastToAll(message interface{}) {
 	}
 }
 
-// CleanupInactiveRooms removes rooms with no clients (optional)
-func (h *Hub) CleanupInactiveRooms() {
+// CleanupInactiveChats removes chats with no clients (optional)
+func (h *Hub) CleanupInactiveChats() {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	for roomID, room := range h.rooms {
-		if len(room.Clients) == 0 && roomID != "general" {
-			delete(h.rooms, roomID)
-			log.Printf("Removed inactive room: %s", roomID)
+	for chatID, chat := range h.chats {
+		if len(chat.Clients) == 0 && chatID != "general" {
+			delete(h.chats, chatID)
+			log.Printf("Removed inactive chat: %s", chatID)
 		}
 	}
 }
 
-// RemoveUserFromAllRooms removes a user from all rooms
-func (h *Hub) RemoveUserFromAllRooms(userID string) {
+// RemoveUserFromAllChats removes a user from all chats
+func (h *Hub) RemoveUserFromAllChats(userID string) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	for roomID, room := range h.rooms {
-		if _, exists := room.Clients[userID]; exists {
-			delete(room.Clients, userID)
-			log.Printf("User %s removed from room %s", userID, roomID)
+	for chatID, chat := range h.chats {
+		if _, exists := chat.Clients[userID]; exists {
+			delete(chat.Clients, userID)
+			log.Printf("User %s removed from chat %s", userID, chatID)
 		}
 	}
 }
 
-// GetUserRooms returns all rooms a user is in
-func (h *Hub) GetUserRooms(userID string) []string {
+// GetUserChats returns all chats a user is in
+func (h *Hub) GetUserChats(userID string) []string {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
-	var userRooms []string
-	for roomID, room := range h.rooms {
-		if _, exists := room.Clients[userID]; exists {
-			userRooms = append(userRooms, roomID)
+	var userChats []string
+	for chatID, chat := range h.chats {
+		if _, exists := chat.Clients[userID]; exists {
+			userChats = append(userChats, chatID)
 		}
 	}
-	return userRooms
+	return userChats
 }
 
-// IsUserInRoom checks if a user is in a specific room
-func (h *Hub) IsUserInRoom(userID, roomID string) bool {
+// IsUserInChat checks if a user is in a specific chat
+func (h *Hub) IsUserInChat(userID, chatID string) bool {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
-	if room, exists := h.rooms[roomID]; exists {
-		_, userExists := room.Clients[userID]
+	if chat, exists := h.chats[chatID]; exists {
+		_, userExists := chat.Clients[userID]
 		return userExists
 	}
 	return false
@@ -361,14 +361,14 @@ func (h *Hub) HandleClientMessage(client *Client, rawMessage []byte) {
 		h.HandleChatMessage(client, message.Content, message.ChatID)
 	case "typing":
 		h.HandleTypingIndicator(client, message.Content, message.ChatID)
-	case "join_room":
-		h.HandleJoinRoom(client, message.ChatID)
-	case "leave_room":
-		h.HandleLeaveRoom(client, message.ChatID)
-	case "create_room":
-		h.HandleCreateRoom(client, message.Content)
-	case "get_rooms":
-		h.HandleGetRooms(client)
+	case "join_chat":
+		h.HandleJoinChat(client, message.ChatID)
+	case "leave_chat":
+		h.HandleLeaveChat(client, message.ChatID)
+	case "create_chat":
+		h.HandleCreateChat(client, message.Content)
+	case "get_chats":
+		h.HandleGetChats(client)
 	default:
 		log.Printf("Unknown message type from client %s: %s", client.userID, message.Type)
 	}
@@ -398,96 +398,96 @@ func (h *Hub) HandleChatMessage(client *Client, content, chatID string) {
 		"timestamp": time.Now(),
 	}
 
-	log.Printf("Broadcasting message from %s in room %s: %s",
+	log.Printf("Broadcasting message from %s in chat %s: %s",
 		client.username, chatID, content)
 
-	// Broadcast to all clients in the room
-	h.BroadcastToRoom(chatID, chatMessage)
+	// Broadcast to all clients in the chat
+	h.BroadcastToChat(chatID, chatMessage)
 }
 
 // HandleTypingIndicator broadcasts typing status
-func (h *Hub) HandleTypingIndicator(client *Client, typing, roomID string) {
+func (h *Hub) HandleTypingIndicator(client *Client, typing, chatID string) {
 	typingMessage := map[string]interface{}{
 		"type":      "typing",
 		"userId":    client.userID,
 		"username":  client.username,
-		"roomId":    roomID,
+		"chatId":    chatID,
 		"typing":    typing == "true",
 		"timestamp": time.Now(),
 	}
 
-	h.BroadcastToRoom(roomID, typingMessage)
+	h.BroadcastToChat(chatID, typingMessage)
 }
 
-// HandleJoinRoom handles room joining
-func (h *Hub) HandleJoinRoom(client *Client, roomID string) {
-	h.JoinRoom(roomID, client.userID, client)
+// HandleJoinChat handles chat joining
+func (h *Hub) HandleJoinChat(client *Client, chatID string) {
+	h.JoinChat(chatID, client.userID, client)
 
-	// Notify room about new user
+	// Notify chat about new user
 	joinMessage := map[string]interface{}{
 		"type":      "user_joined",
 		"userId":    client.userID,
 		"username":  client.username,
-		"message":   client.username + " joined the room",
-		"roomId":    roomID,
+		"message":   client.username + " joined the chat",
+		"chatId":    chatID,
 		"timestamp": time.Now(),
 	}
 
-	h.BroadcastToRoom(roomID, joinMessage)
+	h.BroadcastToChat(chatID, joinMessage)
 }
 
-// HandleLeaveRoom handles room leaving
-func (h *Hub) HandleLeaveRoom(client *Client, roomID string) {
-	h.LeaveRoom(roomID, client.userID)
+// HandleLeaveChat handles chat leaving
+func (h *Hub) HandleLeaveChat(client *Client, chatID string) {
+	h.LeaveChat(chatID, client.userID)
 
 	leaveMessage := map[string]interface{}{
 		"type":      "user_left",
 		"userId":    client.userID,
 		"username":  client.username,
-		"message":   client.username + " left the room",
-		"roomId":    roomID,
+		"message":   client.username + " left the chat",
+		"chatId":    chatID,
 		"timestamp": time.Now(),
 	}
 
-	h.BroadcastToRoom(roomID, leaveMessage)
+	h.BroadcastToChat(chatID, leaveMessage)
 }
 
-// HandleCreateRoom handles room creation
-func (h *Hub) HandleCreateRoom(client *Client, roomName string) {
+// HandleCreateChat handles chat creation
+func (h *Hub) HandleCreateChat(client *Client, chatName string) {
 
-	roomID, err := generateUUID()
+	chatID, err := generateUUID()
 	if err != nil {
-		fmt.Printf("Error generating room id: %v", err)
+		fmt.Printf("Error generating chat id: %v", err)
 		return
 	}
 
-	h.CreateRoom(roomID, roomName)
-	h.JoinRoom(roomID, client.userID, client)
+	h.CreateChat(chatID, chatName)
+	h.JoinChat(chatID, client.userID, client)
 
-	// Notify about room creation
-	roomMessage := map[string]interface{}{
-		"type":      "room_created",
-		"roomId":    roomID,
-		"roomName":  roomName,
+	// Notify about chat creation
+	chatMessage := map[string]interface{}{
+		"type":      "chat_created",
+		"chatId":    chatID,
+		"chatName":  chatName,
 		"userId":    client.userID,
 		"username":  client.username,
 		"timestamp": time.Now(),
 	}
 
-	h.BroadcastToAll(roomMessage)
+	h.BroadcastToAll(chatMessage)
 }
 
-// HandleGetRooms handles room list requests
-func (h *Hub) HandleGetRooms(client *Client) {
-	roomList := h.GetRoomList()
+// HandleGetChats handles chat list requests
+func (h *Hub) HandleGetChats(client *Client) {
+	chatList := h.GetChatList()
 
 	response := map[string]interface{}{
-		"type":     "room_list",
-		"roomList": roomList,
+		"type":     "chat_list",
+		"chatList": chatList,
 	}
 
 	if err := client.SendMessage(response); err != nil {
-		log.Printf("Failed to send room list to client %s: %v", client.userID, err)
+		log.Printf("Failed to send chat list to client %s: %v", client.userID, err)
 	}
 }
 

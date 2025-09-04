@@ -78,142 +78,25 @@ func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Failed to send welcome message to user %s: %v", userID, err)
 	}
 
-	// Notify all users in default room about new user
+	// Notify all users in default chat about new user
 	h.notifyUserJoined(userID, username, "general")
 }
 
-// notifyUserJoined sends a notification when a user joins a room
-func (h *WebSocketHandler) notifyUserJoined(userID, username, roomID string) {
+// notifyUserJoined sends a notification when a user joins a chat
+func (h *WebSocketHandler) notifyUserJoined(userID, username, chatID string) {
 
 	joinMessage := map[string]interface{}{
 		"type":      "user_joined",
 		"userId":    userID,
 		"username":  username,
-		"message":   username + " joined the room",
-		"roomId":    roomID,
+		"message":   username + " joined the chat",
+		"chatID":    chatID,
 		"timestamp": time.Now(),
 	}
 
-	// Broadcast to the specific room
-	h.hub.BroadcastToRoom(roomID, joinMessage)
+	// Broadcast to the specific chat
+	h.hub.BroadcastToChat(chatID, joinMessage)
 }
-
-//// Handle incoming messages from clients
-//func (h *WebSocketHandler) handleClientMessage(client *hub.Client, rawMessage []byte) {
-//
-//	var message struct {
-//		Type    string `json:"type"`
-//		Content string `json:"content"`
-//		ChatID  string `json:"chatId"`
-//	}
-//
-//	if err := json.Unmarshal(rawMessage, &message); err != nil {
-//		log.Printf("Error parsing message from client %s: %v", client.UserID(), err)
-//		return
-//	}
-//
-//	switch message.Type {
-//	case "message":
-//		h.handleChatMessage(client, message.Content, message.ChatID)
-//	case "typing":
-//		h.handleTypingIndicator(client, message.Content, message.ChatID)
-//	case "join_room":
-//		h.handleJoinRoom(client, message.ChatID)
-//	case "leave_room":
-//		h.handleLeaveRoom(client, message.ChatID)
-//	case "create_room":
-//		h.handleCreateRoom(client, message.Content)
-//	}
-//}
-//
-//// handleChatMessage processes and broadcasts chat messages
-//func (h *WebSocketHandler) handleChatMessage(client *hub.Client, content, chatID string) {
-//	if content == "" {
-//		return
-//	}
-//
-//	// Create the message to broadcast
-//	chatMessage := map[string]interface{}{
-//		"type":      "message",
-//		"id":        generateUUID(),
-//		"userId":    client.UserID(),
-//		"username":  client.Username(),
-//		"content":   content,
-//		"chatID":    chatID,
-//		"timestamp": time.Now(),
-//	}
-//
-//	log.Printf("Broadcasting message from %s in room: %s: %s",
-//		client.Username(), chatID, content)
-//
-//	// Broadcast to all clients in the room
-//	h.hub.BroadcastToRoom(chatID, chatMessage)
-//}
-//
-//// handleTypingIndicator broadcasts typing status
-//func (h *WebSocketHandler) handleTypingIndicator(client *hub.Client, typing, roomID string) {
-//
-//	typingMessage := map[string]interface{}{
-//		"type":      "typing",
-//		"userId":    client.UserID(),
-//		"username":  client.Username(),
-//		"roomId":    roomID,
-//		"typing":    typing == "true",
-//		"timestamp": time.Now(),
-//	}
-//
-//	h.hub.BroadcastToRoom(roomID, typingMessage)
-//}
-//
-//// handleJoinRoom handles room joining
-//func (h *WebSocketHandler) handleJoinRoom(client *hub.Client, roomID string) {
-//	h.hub.JoinRoom(roomID, client.UserID(), client)
-//
-//	// Notify room about new user
-//	h.notifyUserJoined(client.UserID(), client.Username(), roomID)
-//}
-//
-//// handleLeaveRoom handles room leaving
-//func (h *WebSocketHandler) handleLeaveRoom(client *hub.Client, roomID string) {
-//
-//	h.hub.LeaveRoom(roomID, client.UserID())
-//
-//	leaveMessage := map[string]interface{}{
-//		"type":      "user_left",
-//		"userId":    client.UserID(),
-//		"username":  client.Username(),
-//		"message":   client.Username() + " left the room",
-//		"roomId":    roomID,
-//		"timestamp": time.Now(),
-//	}
-//
-//	h.hub.BroadcastToRoom(roomID, leaveMessage)
-//}
-//
-//// handleCreateRoom handles room creation
-//func (h *WebSocketHandler) handleCreateRoom(client *hub.Client, roomName string) {
-//
-//	roomID, err := generateUUID()
-//	if err != nil {
-//		fmt.Printf("Error generating room id: %v", err)
-//		return
-//	}
-//
-//	h.hub.CreateRoom(roomID, roomName)
-//	h.hub.JoinRoom(roomID, client.UserID(), client)
-//
-//	// Notify about room creation
-//	roomMessage := map[string]interface{}{
-//		"type":      "room_created",
-//		"roomId":    roomID,
-//		"roomName":  roomName,
-//		"userId":    client.UserID(),
-//		"username":  client.Username(),
-//		"timestamp": time.Now(),
-//	}
-//
-//	h.hub.BroadcastToAll(roomMessage)
-//}
 
 // ServeWs is the legacy function for backward compatibility
 func ServeWs(hub *hub.Hub, w http.ResponseWriter, r *http.Request) {

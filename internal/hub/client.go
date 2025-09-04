@@ -22,7 +22,7 @@ type Client struct {
 	userID   string
 	username string
 	send     chan []byte
-	rooms    map[string]bool // Track which rooms the user is in
+	chats    map[string]bool // Track which chats the user is in
 	//messageHandler func(*Client, []byte) // Add this field
 	mutex sync.RWMutex
 }
@@ -34,40 +34,33 @@ func NewClient(hub *Hub, conn *websocket.Conn, userID string) *Client {
 		conn:   conn,
 		userID: userID,
 		send:   make(chan []byte, 256),
-		rooms:  make(map[string]bool),
+		chats:  make(map[string]bool),
 	}
 }
 
-// SetMessageHandler sets the external message handler
-//func (c *Client) SetMessageHandler(handler func(*Client, []byte)) {
-//	c.mutex.Lock()
-//	defer c.mutex.Unlock()
-//	c.messageHandler = handler
-//}
-
-// IsInRoom checks if the client is in a specific room
-func (c *Client) IsInRoom(roomID string) bool {
-	_, ok := c.rooms[roomID]
+// IsInChat checks if the client is in a specific chat
+func (c *Client) IsInChat(chatID string) bool {
+	_, ok := c.chats[chatID]
 	return ok
 }
 
-// JoinRoom adds the client to a room
-func (c *Client) JoinRoom(roomID string) {
-	c.rooms[roomID] = true
+// JoinChat adds the client to a chat
+func (c *Client) JoinChat(chatID string) {
+	c.chats[chatID] = true
 }
 
-// LeaveRoom removes the client from a room
-func (c *Client) LeaveRoom(roomID string) {
-	delete(c.rooms, roomID)
+// LeaveChat removes the client from a chat
+func (c *Client) LeaveChat(chatID string) {
+	delete(c.chats, chatID)
 }
 
-// GetRooms returns all rooms the client is in
-func (c *Client) GetRooms() []string {
-	rooms := make([]string, 0, len(c.rooms))
-	for roomID := range c.rooms {
-		rooms = append(rooms, roomID)
+// GetChats returns all chats the client is in
+func (c *Client) GetChats() []string {
+	chats := make([]string, 0, len(c.chats))
+	for chatID := range c.chats {
+		chats = append(chats, chatID)
 	}
-	return rooms
+	return chats
 }
 
 // ReadPump handles messages from the WebSocket connection
@@ -210,8 +203,8 @@ func (c *Client) handleTypingMessage(rawMessage []byte) {
 		return
 	}
 
-	// Broadcast typing status to all users in the room
-	c.hub.BroadcastToRoom(typingStatus.ChatID, map[string]interface{}{
+	// Broadcast typing status to all users in the chat
+	c.hub.BroadcastToChat(typingStatus.ChatID, map[string]interface{}{
 		"type":   "typing",
 		"userId": c.userID,
 		"chatId": typingStatus.ChatID,
@@ -247,31 +240,31 @@ func (c *Client) handleChatMessage(rawMessage []byte) {
 		"timestamp": time.Now(),
 	}
 
-	// Broadcast message to all users in the room
-	c.hub.BroadcastToRoom(message.ChatID, chatMessage)
+	// Broadcast message to all users in the chat
+	c.hub.BroadcastToChat(message.ChatID, chatMessage)
 
-	log.Printf("Message from client %s in room %s: %s", c.userID, message.ChatID, message.Content)
+	log.Printf("Message from client %s in chat %s: %s", c.userID, message.ChatID, message.Content)
 }
 
-// handleJoinRoom processes room join requests
-func (c *Client) handleJoinRoom(rawMessage []byte) {
+// handleJoinChat processes chat join requests
+func (c *Client) handleJoinChat(rawMessage []byte) {
 
 	var joinRequest struct {
-		RoomID string `json:"roomId"`
+		ChatID string `json:"chatId"`
 	}
 
 	if err := json.Unmarshal(rawMessage, &joinRequest); err != nil {
-		log.Printf("Error parsing join_room request from client %s: %v", c.userID, err)
+		log.Printf("Error parsing join_chat request from client %s: %v", c.userID, err)
 		return
 	}
 
-	// Join the room through the hub
-	c.hub.JoinRoom(joinRequest.RoomID, c.userID, c)
+	// Join the chat through the hub
+	c.hub.JoinChat(joinRequest.ChatID, c.userID, c)
 
 	// Send confirmation to client
 	confirmation := map[string]interface{}{
-		"type":    "room_joined",
-		"roomId":  joinRequest.RoomID,
+		"type":    "chat_joined",
+		"chatId":  joinRequest.ChatID,
 		"success": true,
 	}
 
@@ -279,27 +272,27 @@ func (c *Client) handleJoinRoom(rawMessage []byte) {
 		c.send <- message
 	}
 
-	log.Printf("Client %s joined room %s", c.userID, joinRequest.RoomID)
+	log.Printf("Client %s joined chat %s", c.userID, joinRequest.ChatID)
 }
 
-// handleLeaveRoom processes room leave requests
-func (c *Client) handleLeaveRoom(rawMessage []byte) {
+// handleLeaveChat processes chat leave requests
+func (c *Client) handleLeaveChat(rawMessage []byte) {
 	var leaveRequest struct {
-		RoomID string `json:"roomId"`
+		ChatID string `json:"chatId"`
 	}
 
 	if err := json.Unmarshal(rawMessage, &leaveRequest); err != nil {
-		log.Printf("Error parsing leave_room request from client %s: %v", c.userID, err)
+		log.Printf("Error parsing leave_chat request from client %s: %v", c.userID, err)
 		return
 	}
 
-	// Leave the room through the hub
-	//c.hub.LeaveRoom(leaveRequest.RoomID, c.userID)
+	// Leave the chat through the hub
+	//c.hub.LeaveChat(leaveRequest.ChatID, c.userID)
 
 	// Send confirmation to client
 	confirmation := map[string]interface{}{
-		"type":    "room_left",
-		"roomId":  leaveRequest.RoomID,
+		"type":    "chat_left",
+		"chatId":  leaveRequest.ChatID,
 		"success": true,
 	}
 
@@ -307,33 +300,33 @@ func (c *Client) handleLeaveRoom(rawMessage []byte) {
 		c.send <- message
 	}
 
-	log.Printf("Client %s left room %s", c.userID, leaveRequest.RoomID)
+	log.Printf("Client %s left chat %s", c.userID, leaveRequest.ChatID)
 }
 
-// handleCreateRoom processes room creation requests
-func (c *Client) handleCreateRoom(rawMessage []byte) {
+// handleCreateChat processes chat creation requests
+func (c *Client) handleCreateChat(rawMessage []byte) {
 
 	var createRequest struct {
-		RoomID   string `json:"roomId"`
-		RoomName string `json:"roomName"`
+		ChatID   string `json:"chatId"`
+		ChatName string `json:"chatName"`
 	}
 
 	if err := json.Unmarshal(rawMessage, &createRequest); err != nil {
-		log.Printf("Error parsing create_room request from client %s: %v", c.userID, err)
+		log.Printf("Error parsing create_chat request from client %s: %v", c.userID, err)
 		return
 	}
 
-	// Create the room through the hub
-	c.hub.CreateRoom(createRequest.RoomID, createRequest.RoomName)
+	// Create the chat through the hub
+	c.hub.CreateChat(createRequest.ChatID, createRequest.ChatName)
 
-	// Auto-join the room after creation
-	c.hub.JoinRoom(createRequest.RoomID, c.userID, c)
+	// Auto-join the chat after creation
+	c.hub.JoinChat(createRequest.ChatID, c.userID, c)
 
 	// Send confirmation to client
 	confirmation := map[string]interface{}{
-		"type":     "room_created",
-		"roomId":   createRequest.RoomID,
-		"roomName": createRequest.RoomName,
+		"type":     "chat_created",
+		"chatId":   createRequest.ChatID,
+		"chatName": createRequest.ChatName,
 		"success":  true,
 	}
 
@@ -341,43 +334,43 @@ func (c *Client) handleCreateRoom(rawMessage []byte) {
 		c.send <- message
 	}
 
-	log.Printf("Client %s created room %s (%s)", c.userID, createRequest.RoomName, createRequest.RoomID)
+	log.Printf("Client %s created chat %s (%s)", c.userID, createRequest.ChatName, createRequest.ChatID)
 }
 
-// handleGetRooms sends the list of available rooms to the client
-func (c *Client) handleGetRooms() {
-	roomList := c.hub.GetRoomList()
+// handleGetChats sends the list of available chats to the client
+func (c *Client) handleGetChats() {
+	chatList := c.hub.GetChatList()
 
 	response := map[string]interface{}{
-		"type":     "room_list",
-		"roomList": roomList,
+		"type":     "chat_list",
+		"chatList": chatList,
 	}
 
 	if message, err := json.Marshal(response); err == nil {
 		c.send <- message
 	}
 
-	log.Printf("Sent room list to client %s", c.userID)
+	log.Printf("Sent chat list to client %s", c.userID)
 }
 
-// handleGetRoomUsers sends the list of users in a specific room
-func (c *Client) handleGetRoomUsers(rawMessage []byte) {
+// handleGetChatUsers sends the list of users in a specific chat
+func (c *Client) handleGetChatUsers(rawMessage []byte) {
 
 	var request struct {
-		RoomID string `json:"roomId"`
+		ChatID string `json:"chatId"`
 	}
 
 	if err := json.Unmarshal(rawMessage, &request); err != nil {
-		log.Printf("Error parsing get_room_users request from client %s: %v", c.userID, err)
+		log.Printf("Error parsing get_chat_users request from client %s: %v", c.userID, err)
 		return
 	}
 
-	// Get users from the hub (you'll need to implement GetRoomUsers in hub.go)
-	users := c.hub.GetRoomUsers(request.RoomID)
+	// Get users from the hub (you'll need to implement GetChatUsers in hub.go)
+	users := c.hub.GetChatUsers(request.ChatID)
 
 	response := map[string]interface{}{
-		"type":   "room_users",
-		"roomId": request.RoomID,
+		"type":   "chat_users",
+		"chatId": request.ChatID,
 		"users":  users,
 	}
 
@@ -385,7 +378,7 @@ func (c *Client) handleGetRoomUsers(rawMessage []byte) {
 		c.send <- message
 	}
 
-	log.Printf("Sent user list for room %s to client %s", request.RoomID, c.userID)
+	log.Printf("Sent user list for chat %s to client %s", request.ChatID, c.userID)
 }
 
 // SendMessage sends a message directly to this client

@@ -24,8 +24,8 @@ type ChatClient struct {
 	messageChan  chan Message
 	errorChan    chan error
 	closeChan    chan struct{}
-	rooms        map[string]bool
-	currentRoom  string
+	chats        map[string]bool
+	currentChat  string
 	isConnected  bool
 	mutex        sync.RWMutex
 	messageCount int
@@ -72,8 +72,8 @@ func NewChatClient(config Config) *ChatClient {
 		messageChan: make(chan Message, 100),
 		errorChan:   make(chan error, 10),
 		closeChan:   make(chan struct{}),
-		rooms:       make(map[string]bool),
-		currentRoom: "general",
+		chats:       make(map[string]bool),
+		currentChat: "general",
 	}
 }
 
@@ -112,8 +112,8 @@ func (c *ChatClient) Connect() error {
 	go c.readPump()
 	go c.handleMessages()
 
-	// Join default room
-	if err := c.JoinRoom("general"); err != nil {
+	// Join default chat
+	if err := c.JoinChat("general"); err != nil {
 		return err
 	}
 
@@ -177,11 +177,11 @@ func (c *ChatClient) handleMessage(msg Message) {
 		if msg.Content == "true" {
 			log.Printf("%s is typing...", msg.Username)
 		}
-	case "room_joined":
-		log.Printf("Joined room: %s", msg.ChatID)
-	case "room_list":
-		//if rooms, ok := msg.Content.(map[string]interface{}); ok {
-		//	log.Printf("Available rooms: %v", rooms)
+	case "chat_joined":
+		log.Printf("Joined chat: %s", msg.ChatID)
+	case "chat_list":
+		//if chats, ok := msg.Content.(map[string]interface{}); ok {
+		//	log.Printf("Available chats: %v", chats)
 		//}
 	case "error":
 		log.Printf("ERROR: %s", msg.Error)
@@ -190,7 +190,7 @@ func (c *ChatClient) handleMessage(msg Message) {
 	}
 }
 
-// SendMessage sends a chat message to the current room
+// SendMessage sends a chat message to the current chat
 func (c *ChatClient) SendMessage(content string) error {
 	if !c.isConnected {
 		return errors.New("not connected to server")
@@ -199,7 +199,7 @@ func (c *ChatClient) SendMessage(content string) error {
 	message := Message{
 		Type:      "message",
 		Content:   content,
-		ChatID:    c.currentRoom,
+		ChatID:    c.currentChat,
 		UserID:    c.userID,
 		Username:  c.username,
 		Timestamp: time.Now(),
@@ -208,15 +208,15 @@ func (c *ChatClient) SendMessage(content string) error {
 	return c.sendJSON(message)
 }
 
-// JoinRoom joins a specific chat room
-func (c *ChatClient) JoinRoom(roomID string) error {
+// JoinChat joins a specific chat chat
+func (c *ChatClient) JoinChat(chatID string) error {
 	if !c.isConnected {
 		return errors.New("not connected to server")
 	}
 
 	message := Message{
-		Type:   "join_room",
-		ChatID: roomID,
+		Type:   "join_chat",
+		ChatID: chatID,
 		UserID: c.userID,
 	}
 
@@ -225,23 +225,23 @@ func (c *ChatClient) JoinRoom(roomID string) error {
 	}
 
 	c.mutex.Lock()
-	c.rooms[roomID] = true
-	c.currentRoom = roomID
+	c.chats[chatID] = true
+	c.currentChat = chatID
 	c.mutex.Unlock()
 
-	log.Printf("Joining room: %s", roomID)
+	log.Printf("Joining chat: %s", chatID)
 	return nil
 }
 
-// LeaveRoom leaves a specific chat room
-func (c *ChatClient) LeaveRoom(roomID string) error {
+// LeaveChat leaves a specific chat chat
+func (c *ChatClient) LeaveChat(chatID string) error {
 	if !c.isConnected {
 		return errors.New("not connected to server")
 	}
 
 	message := Message{
-		Type:   "leave_room",
-		ChatID: roomID,
+		Type:   "leave_chat",
+		ChatID: chatID,
 		UserID: c.userID,
 	}
 
@@ -250,28 +250,28 @@ func (c *ChatClient) LeaveRoom(roomID string) error {
 	}
 
 	c.mutex.Lock()
-	delete(c.rooms, roomID)
-	if c.currentRoom == roomID {
-		c.currentRoom = "general"
+	delete(c.chats, chatID)
+	if c.currentChat == chatID {
+		c.currentChat = "general"
 	}
 	c.mutex.Unlock()
 
-	log.Printf("Left room: %s", roomID)
+	log.Printf("Left chat: %s", chatID)
 	return nil
 }
 
-// CreateRoom creates a new chat room
-func (c *ChatClient) CreateRoom(roomName string) error {
+// CreateChat creates a new chat chat
+func (c *ChatClient) CreateChat(chatName string) error {
 	if !c.isConnected {
 		return errors.New("not connected to server")
 	}
 
-	roomID := generateRoomID(roomName)
+	chatID := generateChatID(chatName)
 
 	message := Message{
-		Type:     "create_room",
-		ChatID:   roomID,
-		Content:  roomName,
+		Type:     "create_chat",
+		ChatID:   chatID,
+		Content:  chatName,
 		UserID:   c.userID,
 		Username: c.username,
 	}
@@ -279,14 +279,14 @@ func (c *ChatClient) CreateRoom(roomName string) error {
 	return c.sendJSON(message)
 }
 
-// ListRooms requests the list of available rooms
-func (c *ChatClient) ListRooms() error {
+// ListChats requests the list of available chats
+func (c *ChatClient) ListChats() error {
 	if !c.isConnected {
 		return errors.New("not connected to server")
 	}
 
 	message := Message{
-		Type: "get_rooms",
+		Type: "get_chats",
 	}
 
 	return c.sendJSON(message)
@@ -300,7 +300,7 @@ func (c *ChatClient) SendTypingIndicator(typing bool) error {
 
 	message := Message{
 		Type:    "typing",
-		ChatID:  c.currentRoom,
+		ChatID:  c.currentChat,
 		UserID:  c.userID,
 		Content: fmt.Sprintf("%t", typing),
 	}
@@ -338,23 +338,23 @@ func (c *ChatClient) IsConnected() bool {
 	return c.isConnected
 }
 
-// GetCurrentRoom returns the current room ID
-func (c *ChatClient) GetCurrentRoom() string {
+// GetCurrentChat returns the current chat ID
+func (c *ChatClient) GetCurrentChat() string {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
-	return c.currentRoom
+	return c.currentChat
 }
 
-// GetRooms returns the list of rooms the client is in
-func (c *ChatClient) GetRooms() []string {
+// GetChats returns the list of chats the client is in
+func (c *ChatClient) GetChats() []string {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
-	rooms := make([]string, 0, len(c.rooms))
-	for room := range c.rooms {
-		rooms = append(rooms, room)
+	chats := make([]string, 0, len(c.chats))
+	for chat := range c.chats {
+		chats = append(chats, chat)
 	}
-	return rooms
+	return chats
 }
 
 // GetMessageCount returns the number of messages received
@@ -372,8 +372,8 @@ func (c *ChatClient) WaitForInterrupt() {
 	c.Close()
 }
 
-// generateRoomID creates a URL-friendly room ID from a name
-func generateRoomID(name string) string {
+// generateChatID creates a URL-friendly chat ID from a name
+func generateChatID(name string) string {
 	// Simple implementation - in production, use a proper slug generator
 	return url.QueryEscape(name)
 }

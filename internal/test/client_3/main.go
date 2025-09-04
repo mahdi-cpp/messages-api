@@ -16,8 +16,8 @@ func main() {
 	// Configuration
 	config := client.Config{
 		ServerURL: "ws://localhost:8089/ws",
-		UserID:    "user_4",
-		Username:  "mahdi_4",
+		UserID:    "user_2",
+		Username:  "mahdi_2",
 		Timeout:   30 * time.Second,
 	}
 
@@ -32,17 +32,17 @@ func main() {
 
 	fmt.Println("=== Go Chat Client ===")
 	fmt.Println("Commands:")
-	fmt.Println("  /join <room>    - Join a room")
-	fmt.Println("  /leave <room>   - Leave a room")
-	fmt.Println("  /create <room>  - Create a room")
-	fmt.Println("  /list           - List available rooms")
-	fmt.Println("  /rooms          - Show joined rooms")
-	fmt.Println("  /current        - Show current room")
+	fmt.Println("  /join <chat>    - Join a chat")
+	fmt.Println("  /leave <chat>   - Leave a chat")
+	fmt.Println("  /create <chat>  - Create a chat")
+	fmt.Println("  /list           - List available chats")
+	fmt.Println("  /chats          - Show joined chats")
+	fmt.Println("  /current        - Show current chat")
 	fmt.Println("  /exit           - Exit the client")
 	fmt.Println("  /help           - Show this help")
 	fmt.Println()
 	fmt.Printf("Connected as: %s\n", config.Username)
-	fmt.Printf("Current room: %s\n", chatClient.GetCurrentRoom())
+	fmt.Printf("Current chat: %s\n", chatClient.GetCurrentChat())
 	fmt.Println("Type your message and press Enter to send:")
 	fmt.Println()
 
@@ -90,43 +90,43 @@ func handleCommand(chatClient *client.ChatClient, command string) {
 	switch parts[0] {
 	case "/join":
 		if len(parts) < 2 {
-			fmt.Println("Usage: /join <room>")
+			fmt.Println("Usage: /join <chat>")
 			return
 		}
-		if err := chatClient.JoinRoom(parts[1]); err != nil {
-			log.Printf("Failed to join room: %v", err)
+		if err := chatClient.JoinChat(parts[1]); err != nil {
+			log.Printf("Failed to join chat: %v", err)
 		}
 
 	case "/leave":
 		if len(parts) < 2 {
-			fmt.Println("Usage: /leave <room>")
+			fmt.Println("Usage: /leave <chat>")
 			return
 		}
-		if err := chatClient.LeaveRoom(parts[1]); err != nil {
-			log.Printf("Failed to leave room: %v", err)
+		if err := chatClient.LeaveChat(parts[1]); err != nil {
+			log.Printf("Failed to leave chat: %v", err)
 		}
 
 	case "/create":
 		if len(parts) < 2 {
-			fmt.Println("Usage: /create <room_name>")
+			fmt.Println("Usage: /create <chat_name>")
 			return
 		}
-		roomName := strings.Join(parts[1:], " ")
-		if err := chatClient.CreateRoom(roomName); err != nil {
-			log.Printf("Failed to create room: %v", err)
+		chatName := strings.Join(parts[1:], " ")
+		if err := chatClient.CreateChat(chatName); err != nil {
+			log.Printf("Failed to create chat: %v", err)
 		}
 
 	case "/list":
-		if err := chatClient.ListRooms(); err != nil {
-			log.Printf("Failed to list rooms: %v", err)
+		if err := chatClient.ListChats(); err != nil {
+			log.Printf("Failed to list chats: %v", err)
 		}
 
-	case "/rooms":
-		rooms := chatClient.GetRooms()
-		fmt.Printf("Joined rooms: %v\n", rooms)
+	case "/chats":
+		chats := chatClient.GetChats()
+		fmt.Printf("Joined chats: %v\n", chats)
 
 	case "/current":
-		fmt.Printf("Current room: %s\n", chatClient.GetCurrentRoom())
+		fmt.Printf("Current chat: %s\n", chatClient.GetCurrentChat())
 
 	case "/exit":
 		fmt.Println("Goodbye!")
@@ -135,12 +135,12 @@ func handleCommand(chatClient *client.ChatClient, command string) {
 
 	case "/help":
 		fmt.Println("Commands:")
-		fmt.Println("  /join <room>    - Join a room")
-		fmt.Println("  /leave <room>   - Leave a room")
-		fmt.Println("  /create <room>  - Create a room")
-		fmt.Println("  /list           - List available rooms")
-		fmt.Println("  /rooms          - Show joined rooms")
-		fmt.Println("  /current        - Show current room")
+		fmt.Println("  /join <chat>    - Join a chat")
+		fmt.Println("  /leave <chat>   - Leave a chat")
+		fmt.Println("  /create <chat>  - Create a chat")
+		fmt.Println("  /list           - List available chats")
+		fmt.Println("  /chats          - Show joined chats")
+		fmt.Println("  /current        - Show current chat")
 		fmt.Println("  /exit           - Exit the client")
 		fmt.Println("  /help           - Show this help")
 
