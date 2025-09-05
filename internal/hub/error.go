@@ -4,5 +4,5 @@ import "errors"
 
 // ErrClientSendBufferFull Custom errors
 var (
-	ErrClientSendBufferFull = errors.New("client send buffer is full")
+	ErrClientSendBufferFull = errors.New("chat_client send buffer is full")
 )

@@ -11,7 +11,7 @@ func (a *Message) GetID() string            { return a.ID }
 func (a *Message) GetCreatedAt() time.Time  { return a.CreatedAt }
 func (a *Message) GetUpdatedAt() time.Time  { return a.UpdatedAt }
 
-type MessageType string
+type Type string
 
 type Message struct {
 	ID               string       `json:"id"`
@@ -104,14 +104,14 @@ type TypingStatus struct {
 }
 
 const (
-	MessageTypeText     MessageType = "text"
-	MessageTypePhoto    MessageType = "photo"
-	MessageTypeVideo    MessageType = "video"
-	MessageTypeDocument MessageType = "document"
-	MessageTypeAudio    MessageType = "audio"
-	MessageTypeVoice    MessageType = "voice"
-	MessageTypeSticker  MessageType = "sticker"
-	MessageTypeLocation MessageType = "location"
-	MessageTypeContact  MessageType = "contact"
-	MessageTypePoll     MessageType = "poll"
+	MessageTypeText     Type = "text"
+	MessageTypePhoto    Type = "photo"
+	MessageTypeVideo    Type = "video"
+	MessageTypeDocument Type = "document"
+	MessageTypeAudio    Type = "audio"
+	MessageTypeVoice    Type = "voice"
+	MessageTypeSticker  Type = "sticker"
+	MessageTypeLocation Type = "location"
+	MessageTypeContact  Type = "contact"
+	MessageTypePoll     Type = "poll"
 )

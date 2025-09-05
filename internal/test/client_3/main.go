@@ -8,32 +8,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/mahdi-cpp/messages-api/internal/client"
+	"github.com/mahdi-cpp/messages-api/internal/chat_client"
+	"github.com/mahdi-cpp/messages-api/internal/config"
 )
-
-func generateUUID() (string, error) {
-	u7, err2 := uuid.NewV7()
-	if err2 != nil {
-		return "", fmt.Errorf("error generating UUIDv7: %w", err2)
-	}
-	return u7.String(), nil
-}
 
 func main() {
 
-	userID, err := generateUUID()
-	if err != nil {
-		return
-	}
-
-	config := client.Config{
+	clientConfig := chat_client.ClientChatConfig{
 		ServerURL: "ws://localhost:8089/ws",
-		UserID:    "userID_" + userID,
+		UserID:    config.Mahdi,
 		Timeout:   30 * time.Second,
 	}
 
-	chatClient, err := client.NewChatClient(config)
+	chatClient, err := chat_client.NewChatClient(clientConfig)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -43,7 +30,7 @@ func main() {
 	if err := chatClient.Connect(); err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
-	defer func(chatClient *client.ChatClient) {
+	defer func(chatClient *chat_client.ChatClient) {
 		err := chatClient.Close()
 		if err != nil {
 		}
@@ -54,15 +41,16 @@ func main() {
 	fmt.Println("  /join <chat>    - Join a chat")
 	fmt.Println("  /leave <chat>   - Leave a chat")
 	fmt.Println("  /create <chat>  - Create a chat")
+	fmt.Println("  /open <chat>    - Open a chat")
 	fmt.Println("  /list           - List available chats")
 	fmt.Println("  /chats          - Show joined chats")
 	fmt.Println("  /current        - Show current chat")
 	fmt.Println("  /typing         - Show is typing to other users")
 	fmt.Println("  /seen           - Show is seen message")
-	fmt.Println("  /exit           - Exit the client")
+	fmt.Println("  /exit           - Exit the chat_client")
 	fmt.Println("  /help           - Show this help")
 	fmt.Println()
-	fmt.Printf("Connected as: %s\n", config.UserID)
+	fmt.Printf("userID: %s connected\n", clientConfig.UserID)
 	fmt.Printf("Current chat: %s\n", chatClient.GetCurrentChat())
 	fmt.Println("Type your message and press Enter to send:")
 	fmt.Println()
@@ -74,7 +62,7 @@ func main() {
 	chatClient.WaitForInterrupt()
 }
 
-func handleUserInput(chatClient *client.ChatClient) {
+func handleUserInput(chatClient *chat_client.ChatClient) {
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -101,7 +89,7 @@ func handleUserInput(chatClient *client.ChatClient) {
 	}
 }
 
-func handleCommand(chatClient *client.ChatClient, command string) {
+func handleCommand(chatClient *chat_client.ChatClient, command string) {
 
 	parts := strings.Fields(command)
 	if len(parts) == 0 {
@@ -109,6 +97,7 @@ func handleCommand(chatClient *client.ChatClient, command string) {
 	}
 
 	switch parts[0] {
+
 	case "/join":
 		if len(parts) < 2 {
 			fmt.Println("Usage: /join <chat>")
@@ -137,6 +126,16 @@ func handleCommand(chatClient *client.ChatClient, command string) {
 			log.Printf("Failed to create chat: %v", err)
 		}
 
+	case "/open":
+		if len(parts) < 2 {
+			fmt.Println("Usage: /open <chatID>")
+			return
+		}
+		chatID := strings.Join(parts[1:], " ")
+		if err := chatClient.CreateChat(chatID); err != nil {
+			log.Printf("Failed to open chat: %v", err)
+		}
+
 	case "/list":
 		if err := chatClient.ListChats(); err != nil {
 			log.Printf("Failed to list chats: %v", err)
@@ -153,6 +152,7 @@ func handleCommand(chatClient *client.ChatClient, command string) {
 		} else {
 			fmt.Printf("sent typing command:\n")
 		}
+
 	case "/seen":
 		err := chatClient.SendSeenIndicator()
 		if err != nil {
@@ -160,6 +160,7 @@ func handleCommand(chatClient *client.ChatClient, command string) {
 		} else {
 			fmt.Printf("sent seen command:\n")
 		}
+
 	case "/current":
 		fmt.Printf("Current chat: %s\n", chatClient.GetCurrentChat())
 
@@ -179,7 +180,7 @@ func handleCommand(chatClient *client.ChatClient, command string) {
 		fmt.Println("  /list           - List available chats")
 		fmt.Println("  /chats          - Show joined chats")
 		fmt.Println("  /current        - Show current chat")
-		fmt.Println("  /exit           - Exit the client")
+		fmt.Println("  /exit           - Exit the chat_client")
 		fmt.Println("  /help           - Show this help")
 
 	default:

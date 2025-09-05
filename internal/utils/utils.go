@@ -2,7 +2,10 @@ package utils
 
 import (
 	"fmt"
+
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+
 	"os"
 	"strconv"
 )
@@ -23,4 +26,12 @@ func GetUserId(c *gin.Context) (int, error) {
 	fmt.Println(userIDStr)
 
 	return strconv.Atoi(userIDStr)
+}
+
+func GenerateUUID() (string, error) {
+	u7, err2 := uuid.NewV7()
+	if err2 != nil {
+		return "", fmt.Errorf("error generating UUIDv7: %w", err2)
+	}
+	return u7.String(), nil
 }

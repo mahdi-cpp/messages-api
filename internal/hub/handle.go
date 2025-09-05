@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/mahdi-cpp/messages-api/internal/utils"
 )
 
-// HandleClientMessage processes a message from a client
+// HandleClientMessage processes a message from a chat_client
 func (h *Hub) HandleClientMessage(client *Client, rawMessage []byte) {
 
 	var message struct {
@@ -17,13 +19,14 @@ func (h *Hub) HandleClientMessage(client *Client, rawMessage []byte) {
 	}
 
 	if err := json.Unmarshal(rawMessage, &message); err != nil {
-		log.Printf("Error parsing message from client %s: %v", client.userID, err)
+		log.Printf("Error parsing message from chat_client %s: %v", client.userID, err)
 		return
 	}
 
 	switch message.Type {
 	case "message":
-		h.HandleChatMessage(client, message.Content, message.ChatID)
+		//h.HandleChatMessage(client, message.Content, message.ChatID)
+		h.handleForSave(client.UserID(), message.ChatID, message.Content)
 	case "typing":
 		h.HandleTypingIndicator(client, message.Content, message.ChatID)
 	case "seen":
@@ -34,41 +37,54 @@ func (h *Hub) HandleClientMessage(client *Client, rawMessage []byte) {
 		h.HandleLeaveChat(client, message.ChatID)
 	case "create_chat":
 		h.HandleCreateChat(client, message.Content)
+	case "open_chat":
+		h.HandleOpenChat(client, message.Content)
 	case "get_chats":
 		h.HandleGetChats(client)
 	default:
-		log.Printf("Unknown message type from client %s: %s", client.userID, message.Type)
+		log.Printf("Unknown message type from chat_client %s: %s", client.userID, message.Type)
 	}
+}
+
+func (h *Hub) handleForSave(userID, chatID, content string) {
+
+	msg := &Message{
+		UserID:  userID,
+		ChatID:  chatID,
+		Content: content,
+	}
+
+	h.messagesToManager <- msg
 }
 
 // HandleChatMessage processes and broadcasts chat message
-func (h *Hub) HandleChatMessage(client *Client, content, chatID string) {
-
-	if content == "" {
-		return
-	}
-
-	messageID, err := generateUUID()
-	if err != nil {
-		fmt.Printf("Error generating message ID: %v", err)
-		return
-	}
-
-	// Create the message to broadcast
-	chatMessage := map[string]interface{}{
-		"type":      "message",
-		"id":        messageID,
-		"userId":    client.userID,
-		"content":   content,
-		"chatID":    chatID,
-		"timestamp": time.Now(),
-	}
-
-	log.Printf("Broadcasting message from %s in chat %s:", chatID, content)
-
-	// Broadcast to all clients in the chat
-	h.BroadcastToChat(chatID, chatMessage)
-}
+//func (h *Hub) HandleChatMessage(client *Client, content, chatID string) {
+//
+//	if content == "" {
+//		return
+//	}
+//
+//	messageID, err := utils.GenerateUUID()
+//	if err != nil {
+//		fmt.Printf("Error generating message ID: %v", err)
+//		return
+//	}
+//
+//	// Create the message to broadcast
+//	chatMessage := map[string]interface{}{
+//		"type":    "message",
+//		"id":      messageID,
+//		"userID":  client.userID,
+//		"chatID":  chatID,
+//		"content": content,
+//		//"timestamp": time.Now(),
+//	}
+//
+//	log.Printf("Broadcasting message from %s in chat %s:", chatID, content)
+//
+//	// Broadcast to all clients in the chat
+//	h.BroadcastToChat(chatID, chatMessage)
+//}
 
 // HandleTypingIndicator broadcasts typing status
 func (h *Hub) HandleTypingIndicator(client *Client, typing, chatID string) {
@@ -129,7 +145,7 @@ func (h *Hub) HandleLeaveChat(client *Client, chatID string) {
 // HandleCreateChat handles chat creation
 func (h *Hub) HandleCreateChat(client *Client, chatName string) {
 
-	chatID, err := generateUUID()
+	chatID, err := utils.GenerateUUID()
 	if err != nil {
 		fmt.Printf("Error generating chat id: %v", err)
 		return
@@ -150,6 +166,21 @@ func (h *Hub) HandleCreateChat(client *Client, chatName string) {
 	h.BroadcastToAll(chatMessage)
 }
 
+func (h *Hub) HandleOpenChat(client *Client, chatID string) {
+
+	h.JoinChat(chatID, client.userID, client)
+
+	// Notify about chat creation
+	chatMessage := map[string]interface{}{
+		"type":      "chat_open",
+		"chatId":    chatID,
+		"userId":    client.userID,
+		"timestamp": time.Now(),
+	}
+
+	h.BroadcastToAll(chatMessage)
+}
+
 // HandleGetChats handles chat list requests
 func (h *Hub) HandleGetChats(client *Client) {
 	chatList := h.GetChatList()
@@ -160,6 +191,6 @@ func (h *Hub) HandleGetChats(client *Client) {
 	}
 
 	if err := client.SendMessage(response); err != nil {
-		log.Printf("Failed to send chat list to client %s: %v", client.userID, err)
+		log.Printf("Failed to send chat list to chat_client %s: %v", client.userID, err)
 	}
 }

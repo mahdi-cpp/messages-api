@@ -6,18 +6,18 @@ import (
 	"log"
 	"time"
 
-	"github.com/mahdi-cpp/messages-api/internal/client"
+	"github.com/mahdi-cpp/messages-api/internal/chat_client"
 )
 
 func main() {
 	// Test with two clients in the same chat
-	client1 := client.NewChatClient(client.Config{
+	client1 := chat_client.NewChatClient(chat_client.ClientChatConfig{
 		ServerURL: "ws://localhost:8089/ws",
 		UserID:    "test_user_1",
 		Username:  "TestUser1",
 	})
 
-	client2 := client.NewChatClient(client.Config{
+	client2 := chat_client.NewChatClient(chat_client.ClientChatConfig{
 		ServerURL: "ws://localhost:8089/ws",
 		UserID:    "test_user_2",
 		Username:  "TestUser2",

@@ -1,4 +1,4 @@
-package client
+package chat_client
 
 import (
 	"encoding/json"
@@ -12,15 +12,16 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/mahdi-cpp/messages-api/internal/collections/message"
+	"github.com/mahdi-cpp/messages-api/internal/config"
 )
 
-// ChatClient represents a client connection to the chat server
+// ChatClient represents a chat_client connection to the chat server
 type ChatClient struct {
 	conn         *websocket.Conn
 	serverURL    string
 	userID       string
-	UserID       string
-	messageChan  chan Message
+	messageChan  chan message.Message
 	errorChan    chan error
 	closeChan    chan struct{}
 	chats        map[string]bool
@@ -30,47 +31,34 @@ type ChatClient struct {
 	messageCount int
 }
 
-// Message represents a chat message
-type Message struct {
-	Type      string    `json:"type"`
-	ID        string    `json:"id,omitempty"`
-	UserID    string    `json:"userId,omitempty"`
-	Content   string    `json:"content,omitempty"`
-	ChatID    string    `json:"chatId,omitempty"`
-	Timestamp time.Time `json:"timestamp,omitempty"`
-	Success   bool      `json:"success,omitempty"`
-	Error     string    `json:"error,omitempty"`
-}
-
-// Config holds client configuration
-type Config struct {
+// ClientChatConfig holds chat_client configuration
+type ClientChatConfig struct {
 	ServerURL string
 	UserID    string
 	Timeout   time.Duration
 }
 
-// NewChatClient creates a new chat client instance
-func NewChatClient(config Config) (*ChatClient, error) {
+// NewChatClient creates a new chat chat_client instance
+func NewChatClient(config1 ClientChatConfig) (*ChatClient, error) {
 
-	if config.UserID == "" {
+	if config1.UserID == "" {
 		return nil, errors.New("user id is required")
 	}
-	//if config.UserID == "" {
+	//if config1.UserID == "" {
 	//	return nil, errors.New("UserID is required")
 	//}
-	if config.Timeout == 0 {
-		config.Timeout = 30 * time.Second
+	if config1.Timeout == 0 {
+		config1.Timeout = 30 * time.Second
 	}
 
 	return &ChatClient{
-		serverURL: config.ServerURL,
-		userID:    config.UserID,
-		//UserID:    config.UserID,
-		messageChan: make(chan Message, 100),
+		serverURL:   config1.ServerURL,
+		userID:      config1.UserID,
+		messageChan: make(chan message.Message, 100),
 		errorChan:   make(chan error, 10),
 		closeChan:   make(chan struct{}),
 		chats:       make(map[string]bool),
-		currentChat: "general",
+		currentChat: config.TestChatID,
 	}, nil
 }
 
@@ -86,7 +74,6 @@ func (c *ChatClient) Connect() error {
 	// Add query parameters
 	q := u.Query()
 	q.Add("user_id", c.userID)
-	q.Add("UserID", c.UserID)
 	u.RawQuery = q.Encode()
 
 	// Establish WebSocket connection
@@ -103,14 +90,14 @@ func (c *ChatClient) Connect() error {
 	c.isConnected = true
 
 	log.Printf("Connected to chat server: %s", c.serverURL)
-	log.Printf("User: %s (%s)", c.UserID, c.userID)
+	log.Printf("User: (%s)", c.userID)
 
 	// Start message handlers
 	go c.readPump()
 	go c.handleMessages()
 
 	// Join default chat
-	if err := c.JoinChat("general"); err != nil {
+	if err := c.JoinChat(config.TestChatID); err != nil {
 		return err
 	}
 
@@ -129,14 +116,14 @@ func (c *ChatClient) readPump() {
 		case <-c.closeChan:
 			return
 		default:
-			_, message, err := c.conn.ReadMessage()
+			_, message1, err := c.conn.ReadMessage()
 			if err != nil {
 				c.errorChan <- fmt.Errorf("read error: %v", err)
 				return
 			}
 
-			var msg Message
-			if err := json.Unmarshal(message, &msg); err != nil {
+			var msg message.Message
+			if err := json.Unmarshal(message1, &msg); err != nil {
 				c.errorChan <- fmt.Errorf("invalid message format: %v", err)
 				continue
 			}
@@ -160,7 +147,7 @@ func (c *ChatClient) handleMessages() {
 }
 
 // handleMessage processes different message types
-func (c *ChatClient) handleMessage(msg Message) {
+func (c *ChatClient) handleMessage(msg message.Message) {
 
 	switch msg.Type {
 	case "message":
@@ -182,7 +169,7 @@ func (c *ChatClient) handleMessage(msg Message) {
 		//	log.Printf("Available chats: %v", chats)
 		//}
 	case "error":
-		log.Printf("ERROR: %s", msg.Error)
+		log.Printf("ERROR: ")
 	default:
 		log.Printf("Unknown message type: %s", msg.Type)
 	}
@@ -194,15 +181,15 @@ func (c *ChatClient) SendMessage(content string) error {
 		return errors.New("not connected to server")
 	}
 
-	message := Message{
+	message1 := message.Message{
 		Type:      "message",
 		Content:   content,
 		ChatID:    c.currentChat,
 		UserID:    c.userID,
-		Timestamp: time.Now(),
+		CreatedAt: time.Now(),
 	}
 
-	return c.sendJSON(message)
+	return c.sendJSON(message1)
 }
 
 // JoinChat joins a specific chat
@@ -211,13 +198,13 @@ func (c *ChatClient) JoinChat(chatID string) error {
 		return errors.New("not connected to server")
 	}
 
-	message := Message{
+	message1 := message.Message{
 		Type:   "join_chat",
 		ChatID: chatID,
 		UserID: c.userID,
 	}
 
-	if err := c.sendJSON(message); err != nil {
+	if err := c.sendJSON(message1); err != nil {
 		return err
 	}
 
@@ -236,20 +223,20 @@ func (c *ChatClient) LeaveChat(chatID string) error {
 		return errors.New("not connected to server")
 	}
 
-	message := Message{
+	message1 := message.Message{
 		Type:   "leave_chat",
 		ChatID: chatID,
 		UserID: c.userID,
 	}
 
-	if err := c.sendJSON(message); err != nil {
+	if err := c.sendJSON(message1); err != nil {
 		return err
 	}
 
 	c.mutex.Lock()
 	delete(c.chats, chatID)
 	if c.currentChat == chatID {
-		c.currentChat = "general"
+		c.currentChat = config.TestChatID
 	}
 	c.mutex.Unlock()
 
@@ -265,14 +252,29 @@ func (c *ChatClient) CreateChat(chatName string) error {
 
 	chatID := generateChatID(chatName)
 
-	message := Message{
+	message1 := message.Message{
 		Type:    "create_chat",
 		ChatID:  chatID,
 		Content: chatName,
 		UserID:  c.userID,
 	}
 
-	return c.sendJSON(message)
+	return c.sendJSON(message1)
+}
+
+func (c *ChatClient) OpenChat(chatID string) error {
+
+	if !c.isConnected {
+		return errors.New("not connected to server")
+	}
+
+	message1 := message.Message{
+		Type:   "chat_open",
+		ChatID: chatID,
+		UserID: c.userID,
+	}
+
+	return c.sendJSON(message1)
 }
 
 // ListChats requests the list of available chats
@@ -281,11 +283,11 @@ func (c *ChatClient) ListChats() error {
 		return errors.New("not connected to server")
 	}
 
-	message := Message{
+	message1 := message.Message{
 		Type: "get_chats",
 	}
 
-	return c.sendJSON(message)
+	return c.sendJSON(message1)
 }
 
 // SendTypingIndicator sends a typing indicator
@@ -295,14 +297,14 @@ func (c *ChatClient) SendTypingIndicator(typing bool) error {
 		return errors.New("not connected to server")
 	}
 
-	message := Message{
+	message1 := message.Message{
 		Type:    "typing",
 		ChatID:  c.currentChat,
 		UserID:  c.userID,
 		Content: fmt.Sprintf("%t", typing),
 	}
 
-	return c.sendJSON(message)
+	return c.sendJSON(message1)
 }
 
 func (c *ChatClient) SendSeenIndicator() error {
@@ -311,13 +313,13 @@ func (c *ChatClient) SendSeenIndicator() error {
 		return errors.New("not connected to server")
 	}
 
-	message := Message{
+	message1 := message.Message{
 		Type:   "seen",
 		ChatID: c.currentChat,
 		UserID: c.userID,
 	}
 
-	return c.sendJSON(message)
+	return c.sendJSON(message1)
 }
 
 // sendJSON sends a JSON message to the server
@@ -357,7 +359,7 @@ func (c *ChatClient) GetCurrentChat() string {
 	return c.currentChat
 }
 
-// GetChats returns the list of chats the client is in
+// GetChats returns the list of chats the chat_client is in
 func (c *ChatClient) GetChats() []string {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
