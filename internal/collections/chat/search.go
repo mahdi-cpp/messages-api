@@ -9,49 +9,49 @@ import (
 )
 
 type SearchOptions struct {
-	ID                    string          `json:"id"`
-	Type                  string          `json:"type"` // "private", "group", "channel", "supergroup"
-	Title                 string          `json:"title"`
-	Username              string          `json:"username"` // Unique identifier for public channels/groups
-	Description           string          `json:"description"`
-	Avatar                string          `json:"avatar"`                // Chat profile photo
-	PinnedMessageId       int             `json:"pinnedMessageId"`       // ID of pinned message
-	MessageAutoDeleteTime int             `json:"messageAutoDeleteTime"` // Auto-delete timer
-	Permissions           Permissions     `json:"permissions"`           // Default chat permissions
-	SlowModeDelay         int             `json:"slowModeDelay"`         // Slow mode delay in seconds
-	StickerSetName        string          `json:"stickerSetName"`        // Name of group sticker set
-	CanSetStickerSet      *bool           `json:"canSetStickerSet"`      // Can set sticker set
-	IsVerified            *bool           `json:"isVerified"`
-	IsRestricted          *bool           `json:"isRestricted"`
-	IsCreator             *bool           `json:"isCreator"`
-	IsScam                *bool           `json:"isScam"`
-	IsFake                *bool           `json:"isFake"`
-	InviteLink            string          `json:"inviteLink"`         // Generated invite link
-	LinkedChatId          int             `json:"linkedChatId"`       // Linked discussion chat for channels
-	Location              *Location       `json:"location"`           // For location-based chats
-	Members               *[]Member       `json:"members"`            // Detailed member list
-	ParticipantsCount     int             `json:"participantsCount"`  // Cache member count
-	ActiveUsernames       []string        `json:"activeUsernames"`    // For multiple usernames
-	AvailableReactions    []string        `json:"availableReactions"` // Available emoji reactions
-	Theme                 string          `json:"theme"`              // Chat theme
-	UnreadCount           int             `json:"unreadCount"`        // Unread message count
-	LastMessage           *MessagePreview `json:"lastMessage"`        // Last message preview
-	IsPinned              *bool           `json:"isPinned"`           // Pinned in user's list
-	PinOrder              int             `json:"pinOrder"`           // Position in pinned list
-	MuteUntil             time.Time       `json:"muteUntil"`          // Mute notification until
+	ID                    string          `form:"id"`
+	Type                  string          `form:"type"` // "private", "group", "channel", "supergroup"
+	Title                 string          `form:"title"`
+	Username              string          `form:"username"` // Unique identifier for public channels/groups
+	Description           string          `form:"description"`
+	Avatar                string          `form:"avatar"`                // Chat profile photo
+	PinnedMessageId       int             `form:"pinnedMessageId"`       // ID of pinned message
+	MessageAutoDeleteTime int             `form:"messageAutoDeleteTime"` // Auto-delete timer
+	Permissions           Permissions     `form:"permissions"`           // Default chat permissions
+	SlowModeDelay         int             `form:"slowModeDelay"`         // Slow mode delay in seconds
+	StickerSetName        string          `form:"stickerSetName"`        // Name of group sticker set
+	CanSetStickerSet      *bool           `form:"canSetStickerSet"`      // Can set sticker set
+	IsVerified            *bool           `form:"isVerified"`
+	IsRestricted          *bool           `form:"isRestricted"`
+	IsCreator             *bool           `form:"isCreator"`
+	IsScam                *bool           `form:"isScam"`
+	IsFake                *bool           `form:"isFake"`
+	InviteLink            string          `form:"inviteLink"`         // Generated invite link
+	LinkedChatId          int             `form:"linkedChatId"`       // Linked discussion chat for channels
+	Location              *Location       `form:"location"`           // For location-based chats
+	Members               *[]Member       `form:"members"`            // Detailed member list
+	ParticipantsCount     int             `form:"participantsCount"`  // Cache member count
+	ActiveUsernames       []string        `form:"activeUsernames"`    // For multiple usernames
+	AvailableReactions    []string        `form:"availableReactions"` // Available emoji reactions
+	Theme                 string          `form:"theme"`              // Chat theme
+	UnreadCount           int             `form:"unreadCount"`        // Unread message count
+	LastMessage           *MessagePreview `form:"lastMessage"`        // Last message preview
+	IsPinned              *bool           `form:"isPinned"`           // Pinned in user's list
+	PinOrder              int             `form:"pinOrder"`           // Position in pinned list
+	MuteUntil             time.Time       `form:"muteUntil"`          // Mute notification until
 
 	// Date filters
-	CreatedAfter  *time.Time `json:"createdAfter,omitempty"`
-	CreatedBefore *time.Time `json:"createdBefore,omitempty"`
-	ActiveAfter   *time.Time `json:"activeAfter,omitempty"`
+	CreatedAfter  *time.Time `form:"createdAfter,omitempty"`
+	CreatedBefore *time.Time `form:"createdBefore,omitempty"`
+	ActiveAfter   *time.Time `form:"activeAfter,omitempty"`
 
 	// Pagination
-	Offset int `json:"offset,omitempty"`
-	Limit  int `json:"limit,omitempty"`
+	Offset int `form:"offset,omitempty"`
+	Limit  int `form:"limit,omitempty"`
 
 	// Sorting
-	SortBy    string `json:"sortBy,omitempty"`    // "title", "created", "members", "lastActivity"
-	SortOrder string `json:"sortOrder,omitempty"` // "asc" or "desc"
+	SortBy    string `form:"sortBy,omitempty"`    // "title", "created", "members", "lastActivity"
+	SortOrder string `form:"sortOrder,omitempty"` // "asc" or "desc"
 }
 
 const MaxLimit = 1000

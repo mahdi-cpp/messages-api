@@ -21,25 +21,8 @@ func NewChatHandler(appManager *application.Manager) *ChatHandler {
 }
 
 // Create godoc
-// @Router /api/chats/{chatId}/users/{userId}/createChat [put]
+// @Router /api/chats post
 func (h *ChatHandler) Create(c *gin.Context) {
-
-	fmt.Println(c.Param("chatId"))
-
-	chatID := c.Param("chatId")
-	if chatID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Chat ID is required"})
-		return
-	}
-
-	userID := c.Param("userId")
-	if userID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required"})
-		return
-	}
-
-	fmt.Println("chatID:", chatID)
-	fmt.Println("userID:", userID)
 
 	var request *chat.Chat
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -47,14 +30,39 @@ func (h *ChatHandler) Create(c *gin.Context) {
 		return
 	}
 
+	fmt.Println(request.Members)
+
 	err := h.appManager.CreateChat(request)
 	if err != nil {
 		return
 	}
+
+	c.JSON(http.StatusCreated, gin.H{"chat": "created"})
 }
 
 func (h *ChatHandler) Read(c *gin.Context) {
 
+}
+
+func (h *ChatHandler) ReadAll(c *gin.Context) {
+
+	var request chat.SearchOptions
+	if err := c.ShouldBindQuery(&request); err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	fmt.Println("title:", request.Title)
+
+	if request.IsVerified != nil {
+		fmt.Println("verified:", *request.IsVerified)
+	}
+
+	fmt.Println("offset:", request.Offset)
+	fmt.Println("limit:", request.Limit)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Search executed successfully"})
 }
 
 func (h *ChatHandler) Update(c *gin.Context) {

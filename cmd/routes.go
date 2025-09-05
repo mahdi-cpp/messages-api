@@ -18,11 +18,11 @@ func setupRoutes(router *gin.Engine, appManager *application.Manager, chatHandle
 	// Static files route
 	router.Static("/files/", "./static")
 
-	// API routes group
-	api := router.Group("/api")
+	router.POST("/api/chats/", chatHandler.Create)
+	//router.GET("/api/chats/:chatId", chatHandler.Read)
 
-	api.PUT("/chats/:chatId/users/:userId/create", chatHandler.Create)
-	api.POST("/update", chatHandler.Update)
-	api.POST("/delete", chatHandler.Delete)
+	router.GET("/api/chats", chatHandler.ReadAll)
 
+	router.PUT("/api/chats/:chatId", chatHandler.Update)
+	router.DELETE("/api/chats/:chatId", chatHandler.Delete)
 }
