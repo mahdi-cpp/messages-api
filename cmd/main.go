@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mahdi-cpp/messages-api/internal/api/handlers"
@@ -32,36 +31,47 @@ func main() {
 		fmt.Println("-----------------------")
 	}
 
-	// Set up HTTP handlers
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		handlers.ServeWs(appManager, w, r)
-	})
-
-	// Serve static files
-	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/", fs)
-
-	// Start server
-	log.Println("Server starting on :8089")
-	if err := http.ListenAndServe(":8089", nil); err != nil {
-		log.Fatal("Server error: ", err)
-	}
-
 	ginInit()
 	chatHandler := handlers.NewChatHandler(appManager)
 	chatRouter(chatHandler)
 
+	// Convert http.HandleFunc to a Gin handler
+	// Gin's handlers have the signature func(*gin.Context)
+	router.GET("/ws", func(c *gin.Context) {
+		// Get the http.ResponseWriter and *http.Request from the Gin context
+		w := c.Writer
+		r := c.Request
+
+		// Call your original handler function
+		handlers.ServeWs(appManager, w, r)
+	})
+
+	// Convert http.FileServer to Gin's router.Static
+	router.Static("/files/", "./static")
+
 	startServer(router)
+}
+
+func webRouter(chatHandler *handlers.ChatHandler) *gin.Engine {
+
+	api := router.Group("")
+
+	api.GET("/", chatHandler.Create)
+	api.POST("update", chatHandler.Update)
+	api.POST("delete", chatHandler.Delete)
+	//api.POST("getFilters", chatHandler.GetFilter)
+
+	return router
 }
 
 func chatRouter(chatHandler *handlers.ChatHandler) *gin.Engine {
 
-	api := router.Group("/api/chat/")
+	api := router.Group("/api/")
 
-	api.POST("create", chatHandler.Create)
+	api.PUT("chats/{chatId}/users/{userId}/createChats", chatHandler.Create)
 	api.POST("update", chatHandler.Update)
 	api.POST("delete", chatHandler.Delete)
-	api.POST("getFilters", chatHandler.GetFilter)
+	//api.POST("getFilters", chatHandler.GetFilter)
 
 	return router
 }

@@ -62,7 +62,7 @@ func NewApplicationManager() (*Manager, error) {
 	go manager.saveMessagesToFile()
 
 	var err error
-	manager.chats, err = collection_manager_v3.NewCollectionManager[*chat.Chat]("/app/iris/com.iris.messages/chats/metadata", true)
+	manager.chats, err = collection_manager_v3.NewCollectionManager[*chat.Chat]("/app/iris/com.iris.messages/metadata", true)
 	if err != nil {
 		panic(err)
 	}
