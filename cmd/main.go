@@ -1,24 +1,37 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mahdi-cpp/messages-api/internal/api/handlers"
 	"github.com/mahdi-cpp/messages-api/internal/application"
+	"github.com/mahdi-cpp/messages-api/internal/config"
 )
 
+var port = 50151
+
 func main() {
+	// 1. Create a single router instance for the entire application.
+	router := gin.Default()
 
 	appManager, err := application.NewApplicationManager()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	chats, err := appManager.GetUserChats("018f3a8b-1b32-7293-c1d4-8765f4d1e2f3")
+	chats, err := appManager.GetUserChats(config.Mahdi)
 	if err != nil {
-		return
+		log.Printf("Error getting chats: %v", err)
+		// The server will still start, but log the error.
 	}
 
 	if len(chats) == 0 {
@@ -31,47 +44,41 @@ func main() {
 		fmt.Println("-----------------------")
 	}
 
-	ginInit()
+	// 2. Instantiate handlers.
 	chatHandler := handlers.NewChatHandler(appManager)
-	chatRouter(chatHandler)
 
-	// Convert http.HandleFunc to a Gin handler
-	// Gin's handlers have the signature func(*gin.Context)
-	router.GET("/ws", func(c *gin.Context) {
-		// Get the http.ResponseWriter and *http.Request from the Gin context
-		w := c.Writer
-		r := c.Request
+	// 3. Set up all routes using the single router instance.
+	setupRoutes(router, appManager, chatHandler)
 
-		// Call your original handler function
-		handlers.ServeWs(appManager, w, r)
-	})
-
-	// Convert http.FileServer to Gin's router.Static
-	router.Static("/files/", "./static")
-
+	// 4. Start the server with the fully configured router.
 	startServer(router)
 }
 
-func webRouter(chatHandler *handlers.ChatHandler) *gin.Engine {
+func startServer(router *gin.Engine) {
+	srv := &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", "0.0.0.0", port),
+		Handler: router,
+	}
 
-	api := router.Group("")
+	// Graceful shutdown logic...
+	go func() {
+		log.Printf("Server starting on %s", srv.Addr)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Server failed: %v", err)
+		}
+	}()
 
-	api.GET("/", chatHandler.Create)
-	api.POST("update", chatHandler.Update)
-	api.POST("delete", chatHandler.Delete)
-	//api.POST("getFilters", chatHandler.GetFilter)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server...")
 
-	return router
-}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-func chatRouter(chatHandler *handlers.ChatHandler) *gin.Engine {
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
+	}
 
-	api := router.Group("/api/")
-
-	api.PUT("chats/{chatId}/users/{userId}/createChats", chatHandler.Create)
-	api.POST("update", chatHandler.Update)
-	api.POST("delete", chatHandler.Delete)
-	//api.POST("getFilters", chatHandler.GetFilter)
-
-	return router
+	log.Println("Server exited")
 }
