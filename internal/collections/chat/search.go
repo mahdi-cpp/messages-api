@@ -9,36 +9,36 @@ import (
 )
 
 type SearchOptions struct {
-	ID                    string          `form:"id"`
-	Type                  string          `form:"type"` // "private", "group", "channel", "supergroup"
-	Title                 string          `form:"title"`
-	Username              string          `form:"username"` // Unique identifier for public channels/groups
-	Description           string          `form:"description"`
-	Avatar                string          `form:"avatar"`                // Chat profile photo
-	PinnedMessageId       int             `form:"pinnedMessageId"`       // ID of pinned message
-	MessageAutoDeleteTime int             `form:"messageAutoDeleteTime"` // Auto-delete timer
-	Permissions           Permissions     `form:"permissions"`           // Default chat permissions
-	SlowModeDelay         int             `form:"slowModeDelay"`         // Slow mode delay in seconds
-	StickerSetName        string          `form:"stickerSetName"`        // Name of group sticker set
-	CanSetStickerSet      *bool           `form:"canSetStickerSet"`      // Can set sticker set
-	IsVerified            *bool           `form:"isVerified"`
-	IsRestricted          *bool           `form:"isRestricted"`
-	IsCreator             *bool           `form:"isCreator"`
-	IsScam                *bool           `form:"isScam"`
-	IsFake                *bool           `form:"isFake"`
-	InviteLink            string          `form:"inviteLink"`         // Generated invite link
-	LinkedChatId          int             `form:"linkedChatId"`       // Linked discussion chat for channels
-	Location              *Location       `form:"location"`           // For location-based chats
-	Members               *[]Member       `form:"members"`            // Detailed member list
-	ParticipantsCount     int             `form:"participantsCount"`  // Cache member count
-	ActiveUsernames       []string        `form:"activeUsernames"`    // For multiple usernames
-	AvailableReactions    []string        `form:"availableReactions"` // Available emoji reactions
-	Theme                 string          `form:"theme"`              // Chat theme
-	UnreadCount           int             `form:"unreadCount"`        // Unread message count
-	LastMessage           *MessagePreview `form:"lastMessage"`        // Last message preview
-	IsPinned              *bool           `form:"isPinned"`           // Pinned in user's list
-	PinOrder              int             `form:"pinOrder"`           // Position in pinned list
-	MuteUntil             time.Time       `form:"muteUntil"`          // Mute notification until
+	ID                    string          `form:"id,omitempty"`
+	Type                  string          `form:"type,omitempty"` // "private", "group", "channel", "supergroup"
+	Title                 string          `form:"title,omitempty"`
+	Username              string          `form:"username,omitempty"` // Unique identifier for public channels/groups
+	Description           string          `form:"description,omitempty"`
+	Avatar                string          `form:"avatar,omitempty"`                // Chat profile photo
+	PinnedMessageId       int             `form:"pinnedMessageId,omitempty"`       // ID of pinned message
+	MessageAutoDeleteTime int             `form:"messageAutoDeleteTime,omitempty"` // Auto-delete timer
+	Permissions           Permissions     `form:"permissions,omitempty"`           // Default chat permissions
+	SlowModeDelay         int             `form:"slowModeDelay,omitempty"`         // Slow mode delay in seconds
+	StickerSetName        string          `form:"stickerSetName,omitempty"`        // Name of group sticker set
+	CanSetStickerSet      *bool           `form:"canSetStickerSet,omitempty"`      // Can set sticker set
+	IsVerified            *bool           `form:"isVerified,omitempty"`
+	IsRestricted          *bool           `form:"isRestricted,omitempty"`
+	IsCreator             *bool           `form:"isCreator,omitempty"`
+	IsScam                *bool           `form:"isScam,omitempty"`
+	IsFake                *bool           `form:"isFake,omitempty"`
+	InviteLink            string          `form:"inviteLink,omitempty"`         // Generated invite link
+	LinkedChatId          int             `form:"linkedChatId,omitempty"`       // Linked discussion chat for channels
+	Location              *Location       `form:"location,omitempty"`           // For location-based chats
+	Members               *[]Member       `form:"members,omitempty"`            // Detailed member list
+	ParticipantsCount     int             `form:"participantsCount,omitempty"`  // Cache member count
+	ActiveUsernames       []string        `form:"activeUsernames,omitempty"`    // For multiple usernames
+	AvailableReactions    []string        `form:"availableReactions,omitempty"` // Available emoji reactions
+	Theme                 string          `form:"theme,omitempty"`              // Chat theme
+	UnreadCount           int             `form:"unreadCount,omitempty"`        // Unread message count
+	LastMessage           *MessagePreview `form:"lastMessage,omitempty"`        // Last message preview
+	IsPinned              *bool           `form:"isPinned,omitempty"`           // Pinned in user's list
+	PinOrder              int             `form:"pinOrder,omitempty"`           // Position in pinned list
+	MuteUntil             time.Time       `form:"muteUntil,omitempty"`          // Mute notification until
 
 	// Date filters
 	CreatedAfter  *time.Time `form:"createdAfter,omitempty"`
@@ -144,6 +144,12 @@ func Search(chats []*Chat, with *SearchOptions) []*Chat {
 
 	// Apply pagination
 	start := with.Offset
+
+	// Check if the start index is out of bounds. If so, return an empty slice.
+	if start >= len(final) {
+		return []*Chat{}
+	}
+
 	end := start + with.Limit
 	if end > len(final) {
 		end = len(final)

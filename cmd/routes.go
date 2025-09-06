@@ -18,11 +18,25 @@ func setupRoutes(router *gin.Engine, appManager *application.Manager, chatHandle
 	// Static files route
 	router.Static("/files/", "./static")
 
-	router.POST("/api/chats/", chatHandler.Create)
-	//router.GET("/api/chats/:chatId", chatHandler.Read)
+	chatRoutes(router, chatHandler)
+}
 
+func chatRoutes(router *gin.Engine, chatHandler *handlers.ChatHandler) {
+
+	router.POST("/api/chats/", chatHandler.Create)
+
+	router.GET("/api/chats/:id", chatHandler.Read)
 	router.GET("/api/chats", chatHandler.ReadAll)
 
-	router.PUT("/api/chats/:chatId", chatHandler.Update)
-	router.DELETE("/api/chats/:chatId", chatHandler.Delete)
+	router.PATCH("/api/chats/:id", chatHandler.Update)
+	router.PATCH("/api/chats/bulk-update", chatHandler.BuckUpdate)
+
+	//router.PATCH("/api/members/:chatId", chatHandler.UpdateMembers)
+
+	router.DELETE("/api/chats/:id", chatHandler.Delete)
+	router.POST("/api/chats/bulk-delete", chatHandler.BuckDelete)
+}
+
+func messageRoutes(router *gin.Engine, chatHandler *handlers.ChatHandler) {
+	router.POST("/api/chats/", chatHandler.Create)
 }

@@ -28,13 +28,13 @@ var upgrader = websocket.Upgrader{
 }
 
 type Manager struct {
-	mu           sync.RWMutex
-	usersStatus  map[string]*UserStatusData //key is userID
-	chats        *collection_manager_v3.Manager[*chat.Chat]
-	chatManagers map[string]*ChatManager // Maps chatIDs to their ChatManager
-	hub          *hub.Hub
-	iconLoader   *image_loader.ImageLoader
-	ctx          context.Context
+	mu              sync.RWMutex
+	usersStatus     map[string]*UserStatusData //key is userID
+	chatsCollection *collection_manager_v3.Manager[*chat.Chat]
+	chatManagers    map[string]*ChatManager // Maps chatIDs to their ChatManager
+	hub             *hub.Hub
+	iconLoader      *image_loader.ImageLoader
+	ctx             context.Context
 	// Added a channel to receive messages from the Hub for saving to a file.
 	// یک کانال برای دریافت پیام‌ها از Hub جهت ذخیره در فایل اضافه شده است.
 	messagesToSave chan *hub.Message
@@ -62,7 +62,7 @@ func NewApplicationManager() (*Manager, error) {
 	go manager.saveMessagesToFile()
 
 	var err error
-	manager.chats, err = collection_manager_v3.NewCollectionManager[*chat.Chat]("/app/iris/com.iris.messages/metadata", true)
+	manager.chatsCollection, err = collection_manager_v3.NewCollectionManager[*chat.Chat]("/app/iris/com.iris.messages/metadata", true)
 	if err != nil {
 		panic(err)
 	}
@@ -130,7 +130,7 @@ func (m *Manager) CreateChat(newChat *chat.Chat) error {
 	}
 	newChat.ID = chatID
 
-	_, err = m.chats.Create(newChat)
+	_, err = m.chatsCollection.Create(newChat)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -145,9 +145,28 @@ func (m *Manager) CreateChat(newChat *chat.Chat) error {
 	//m.chatManagers[chatID] = chatManager
 }
 
+func (m *Manager) UpdateChat(chatID string, updateOptions chat.UpdateOptions) error {
+
+	fmt.Println(chatID)
+
+	chat1, err := m.chatsCollection.Get(chatID)
+	if err != nil {
+		return err
+	}
+
+	chat.Update(chat1, updateOptions)
+
+	_, err = m.chatsCollection.Update(chat1)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *Manager) openChat(chatID string) {
 
-	chat1, err := m.chats.Get(chatID)
+	chat1, err := m.chatsCollection.Get(chatID)
 	if err != nil {
 		fmt.Println("chat not found in cash")
 		return
@@ -175,7 +194,7 @@ func (m *Manager) OpenChat(chatID string) (*chat.Chat, error) {
 		return nil, err
 	}
 
-	//chat1, err := m.chats.Get(chatID)
+	//chat1, err := m.chatsCollection.Get(chatID)
 
 	//chatManager, err := NewChatManager(chat1)
 	//if err != nil {
@@ -235,9 +254,45 @@ func (m *Manager) saveMessagesToFile() {
 	}
 }
 
-func (m *Manager) GetUserChats(userID string) ([]*chat.Chat, error) {
+func (m *Manager) ReadChat(chatID string) (*chat.Chat, error) {
 
-	chats, err := m.chats.GetAll()
+	chat1, err := m.chatsCollection.Get(chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	return chat1, nil
+}
+
+func (m *Manager) ReadAllChats(chatOptions *chat.SearchOptions) ([]*chat.Chat, error) {
+
+	chats, err := m.chatsCollection.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	var userChats []*chat.Chat
+	results := search.Find(chats, chat.HasMemberWith(chat.MemberWithUserID(config.Mahdi)))
+
+	lessFn := chat.GetLessFunc("updatedAt", "start")
+	if lessFn != nil {
+		search.SortIndexedItems(results, lessFn)
+	}
+
+	fmt.Println("ReadAllChats: ", len(results))
+
+	for _, result := range results {
+		userChats = append(userChats, result.Value)
+	}
+
+	filterChats := chat.Search(userChats, chatOptions)
+
+	return filterChats, nil
+}
+
+func (m *Manager) ReadUserChats(userID string) ([]*chat.Chat, error) {
+
+	chats, err := m.chatsCollection.GetAll()
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +301,7 @@ func (m *Manager) GetUserChats(userID string) ([]*chat.Chat, error) {
 	//	Offset: 0,
 	//	Limit:  10,
 	//}
-	//filterChats := chat.Search(chats, searchOptions)
+	//filterChats := chat.Search(chatsCollection, searchOptions)
 
 	var filterChats []*chat.Chat
 	results := search.Find(chats, chat.HasMemberWith(chat.MemberWithUserID(userID)))

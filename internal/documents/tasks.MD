@@ -1,20 +1,32 @@
 
 
 
-### websocket commands
+### Chats REST API
 
-- [ ] create chat
-- [x] send message to chat
+- [ ] create
+- [ ] read
+- [ ] read all
+- [ ] update
+- [ ] buck_update
+- [ ] delete 
+- [ ] buck-delete 
 - [ ] 
-- [ ] 
 - [ ]
 - [ ]
 - [ ]
-- [ ] message view count for group and public channels
 
 
-### websocket commands
-- [x] Feature 1
-- [ ] Feature 2
-- [ ] Feature 3
-    - [ ] Nested Feature
+update---------------------------
+add member
+update member
+delete member
+
+
+
+### Messages REST API
+
+- [ ] create 
+- [ ] Read
+- [ ] update
+- [ ] delete 
+- [ ] buck-delete

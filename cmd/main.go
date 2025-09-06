@@ -28,7 +28,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	chats, err := appManager.GetUserChats(config.Mahdi)
+	chats, err := appManager.ReadUserChats(config.Mahdi)
 	if err != nil {
 		log.Printf("Error getting chats: %v", err)
 		// The server will still start, but log the error.
