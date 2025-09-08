@@ -68,9 +68,44 @@ func NewApplicationManager() (*Manager, error) {
 		panic(err)
 	}
 
-	manager.openChat(config.TestChatID)
+	//all, err := manager.chatsCollection.GetAll()
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	//for _, chat1 := range all {
+	//	fmt.Println("chatId", chat1.ID)
+	//}
+
+	_, err = manager.GetChatManager(config.TestChatID)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	return manager, nil
+}
+
+func (m *Manager) GetChatManager(chatID string) (*ChatManager, error) {
+
+	chatManager, ok := m.chatManagers[chatID]
+	if !ok {
+		return nil, fmt.Errorf("chat manager not found for ID: %s", chatID)
+	}
+
+	chat1, err := m.chatsCollection.Get(chatID)
+	if err != nil {
+		fmt.Println("chat not found in cash")
+		return nil, err
+	}
+
+	chatManager, err = NewChatManager(chat1)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	m.chatManagers[chatID] = chatManager // add to cash
+
+	return chatManager, nil
 }
 
 func (m *Manager) CreateWebsocketClient(w http.ResponseWriter, r *http.Request, userID string, username string) {
@@ -142,8 +177,6 @@ func (m *Manager) ChatCreate(newChat *chat.Chat) (*chat.Chat, error) {
 	//if err != nil {
 	//	panic(err)
 	//}
-
-	//m.chatManagers[chatID] = chatManager
 }
 
 func (m *Manager) UpdateChat(chatID string, updateOptions chat.UpdateOptions) error {
@@ -163,48 +196,6 @@ func (m *Manager) UpdateChat(chatID string, updateOptions chat.UpdateOptions) er
 	}
 
 	return nil
-}
-
-func (m *Manager) openChat(chatID string) {
-
-	chat1, err := m.chatsCollection.Get(chatID)
-	if err != nil {
-		fmt.Println("chat not found in cash")
-		return
-	}
-
-	chatManager, err := NewChatManager(chat1)
-	if err != nil {
-		panic(err)
-	}
-
-	m.chatManagers[chatID] = chatManager
-}
-
-func (m *Manager) OpenChat(chatID string) (*chat.Chat, error) {
-
-	chatManager, ok := m.chatManagers[chatID]
-	if ok {
-		return chatManager.chat, nil
-	} else {
-		fmt.Println("chat not found.")
-	}
-
-	err := chatManager.Open()
-	if err != nil {
-		return nil, err
-	}
-
-	//chat1, err := m.chatsCollection.Get(chatID)
-
-	//chatManager, err := NewChatManager(chat1)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//m.chatManagers[chatID] = chatManager
-
-	return nil, nil
 }
 
 func (m *Manager) MessageCreate(newMessage *message.Message) (*message.Message, error) {
@@ -236,11 +227,8 @@ func (m *Manager) saveMessagesToFile() {
 
 	for msg := range m.messagesToSave {
 
-		startTime := time.Now()
-		fmt.Println(msg.UserID, msg.ChatID, msg.Content)
-		chatManager, ok := m.chatManagers[config.TestChatID]
-		if !ok {
-			fmt.Println("chat not found.")
+		chatManager, err := m.GetChatManager(msg.ChatID)
+		if err != nil {
 			return
 		}
 
@@ -255,26 +243,20 @@ func (m *Manager) saveMessagesToFile() {
 			ID:          id,
 			Width:       450,
 			UserID:      msg.UserID,
-			ChatID:      config.TestChatID,
+			ChatID:      msg.ChatID,
 			Content:     msg.Content,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
 			Version:     "1",
 		}
 
-		_, err = chatManager.messages.Create(newMessage)
+		err = chatManager.CreateMessage(newMessage)
 		if err != nil {
 			fmt.Println("Failed to create message to file.")
 			return
 		}
 
-		// Stop timer and calculate duration
-		duration := time.Since(startTime)
-
-		// Print the duration ⏳
-		fmt.Printf("Time taken: %v\n", duration)
-
-		m.hub.BroadcastToChat(config.TestChatID, newMessage)
+		m.hub.BroadcastToChat(msg.ChatID, newMessage)
 	}
 }
 
@@ -340,4 +322,21 @@ func (m *Manager) ReadUserChats(userID string) ([]*chat.Chat, error) {
 	}
 
 	return filterChats, nil
+}
+
+// -------------------------------------------------------------------------------
+
+func (m *Manager) ReadAllMessages(with *message.SearchOptions) ([]*message.Message, error) {
+
+	chatManager, ok := m.chatManagers[with.ChatID]
+	if !ok {
+		return nil, fmt.Errorf("chatId not found")
+	}
+
+	all, err := chatManager.ReadAllMessages()
+	if err != nil {
+		return nil, err
+	}
+
+	return message.Search(all, with), nil
 }

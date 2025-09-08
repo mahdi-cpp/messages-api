@@ -25,6 +25,8 @@ func NewMessageHandler(appManager *application.Manager) *MessageHandler {
 // @Router /api/messages post
 func (h *MessageHandler) Create(c *gin.Context) {
 
+	fmt.Println("MessageHandler create")
+
 	var request *message.Message
 	if err := c.ShouldBindJSON(&request); err != nil {
 		helpers.AbortWithRequestInvalid(c)
@@ -56,42 +58,53 @@ func (h *MessageHandler) Create(c *gin.Context) {
 //	@Router			/chats/{id} [get]
 func (h *MessageHandler) Read(c *gin.Context) {
 
-	chatID := c.Param("id")
-
-	chat1, err := h.appManager.ReadChat(chatID)
-	if err != nil {
-		return
-	}
-
-	fmt.Println(chat1.Title)
-
-	c.JSON(http.StatusOK, chat1)
-}
-
-func (h *MessageHandler) ReadAll(c *gin.Context) {
-
-	var request chat.SearchOptions
+	var request message.SearchOptions
 	if err := c.ShouldBindQuery(&request); err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	fmt.Println("title:", request.Title)
-	fmt.Println("offset:", request.Offset)
-	fmt.Println("limit:", request.Limit)
-	if request.IsVerified != nil {
-		fmt.Println("verified:", *request.IsVerified)
-	}
+	if request.MessageID == "" { //read all message with SearchOptions
+		selectedMessages, err := h.appManager.ReadAllMessages(&request)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 
-	chats, err := h.appManager.ReadAllChats(&request)
-	if err != nil {
+		c.JSON(http.StatusOK, selectedMessages)
+
+	} else { //read single message
+
+		c.JSON(http.StatusNotFound, gin.H{"messageId not found": request.MessageID})
+	}
+}
+
+func (h *MessageHandler) ReadAll(c *gin.Context) {
+
+	fmt.Println("MessageHandler readAll")
+
+	var with message.SearchOptions
+	if err := c.ShouldBindQuery(&with); err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	fmt.Println("ReadAll match:", len(chats))
+	fmt.Println("with:", with)
 
-	c.JSON(http.StatusOK, chats)
+	fmt.Println("offset:", with.Offset)
+	fmt.Println("limit:", with.Limit)
+
+	messages, err := h.appManager.ReadAllMessages(&with)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	fmt.Println("ReadAllMessages match:", len(messages))
+
+	c.JSON(http.StatusOK, messages)
 }
 
 func (h *MessageHandler) Update(c *gin.Context) {

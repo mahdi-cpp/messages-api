@@ -15,7 +15,7 @@ import (
 // Note: This function remains as a general utility for file-based processing.
 func ProcessUserJSONFile(inputFilePath, outputDirPath string) error {
 
-	// Read the entire input JSON file.
+	// ReadChat the entire input JSON file.
 	// io/os.ReadFile is deprecated in Go 1.16+, replaced by os.ReadFile.
 	// For wider compatibility or older Go versions, ioutil.ReadFile is acceptable.
 	data, err := os.ReadFile(inputFilePath)

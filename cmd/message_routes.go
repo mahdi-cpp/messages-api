@@ -8,9 +8,10 @@ import (
 func messageRoutes(router *gin.Engine, messageHandler *handlers.MessageHandler) {
 
 	router.POST("/api/messages", messageHandler.Create)
+	router.GET("/api/messages", messageHandler.Read)
 
-	router.GET("/api/messages/:id", messageHandler.Read)
-	router.GET("/api/messages", messageHandler.ReadAll)
+	//router.GET("/api/messages/:messageId/chats/chatId", messageHandler.Read)
+	//router.GET("/api/messages/chats/chatId", messageHandler.ReadAll)
 
 	router.PATCH("/api/messages/:id", messageHandler.Update)
 	router.PATCH("/api/messages/bulk-update", messageHandler.BuckUpdate)

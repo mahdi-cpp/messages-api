@@ -7,10 +7,13 @@ import (
 
 func chatRoutes(router *gin.Engine, chatHandler *handlers.ChatHandler) {
 
-	router.POST("/api/chats/", chatHandler.Create)
+	router.POST("/api/chats", chatHandler.Create)
 
-	router.GET("/api/chats/:id", chatHandler.Read)
-	router.GET("/api/chats", chatHandler.ReadAll)
+	router.GET("/api/chats", chatHandler.Read)
+
+	//router.GET("/api/chats", chatHandler.Read)
+	//router.GET("/api/chats/:chatId/messages/:messageId", chatHandler.ReadChatMessage)
+	//router.GET("/api/chats/:chatId/messages/", chatHandler.ReadChatMessages)
 
 	router.PATCH("/api/chats/:id", chatHandler.Update)
 	router.PATCH("/api/chats/bulk-update", chatHandler.BuckUpdate)

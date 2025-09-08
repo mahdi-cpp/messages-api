@@ -20,7 +20,8 @@ func NewChatHandler(appManager *application.Manager) *ChatHandler {
 	}
 }
 
-// Create @Summary     Create a new chat
+// Create
+// @Summary     create a new chat
 // @Description Creates a new chat instance. The request body should contain a list of members to include in the chat.
 // @Tags        chat
 // @Accept      json
@@ -47,7 +48,7 @@ func (h *ChatHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, newChat)
 }
 
-// Read
+// ReadChat
 // @Description Retrieves a single chat instance by its unique ID.
 // @Tags chat
 // @Accept json
@@ -57,7 +58,7 @@ func (h *ChatHandler) Create(c *gin.Context) {
 // @Failure 404 {string} string "Chat not found"
 // @Failure 500 {string} string "Internal server error"
 // @Router /chats/{id} [get]
-func (h *ChatHandler) Read(c *gin.Context) {
+func (h *ChatHandler) ReadChat(c *gin.Context) {
 
 	chatID := c.Param("id")
 
@@ -71,7 +72,7 @@ func (h *ChatHandler) Read(c *gin.Context) {
 	c.JSON(http.StatusOK, chat1)
 }
 
-// ReadAll
+// Read
 // @Summary Get a list of chats
 // @Description Retrieves a list of chats, with optional search, pagination, and filtering.
 // @Tags chat
@@ -84,7 +85,7 @@ func (h *ChatHandler) Read(c *gin.Context) {
 // @Success 200 {array} chat.Chat "List of chats retrieved successfully"
 // @Failure 500 {string} string "Internal server error"
 // @Router /chats [get]
-func (h *ChatHandler) ReadAll(c *gin.Context) {
+func (h *ChatHandler) Read(c *gin.Context) {
 
 	var request chat.SearchOptions
 	if err := c.ShouldBindQuery(&request); err != nil {
@@ -93,25 +94,70 @@ func (h *ChatHandler) ReadAll(c *gin.Context) {
 		return
 	}
 
-	fmt.Println("title:", request.Title)
-	fmt.Println("offset:", request.Offset)
-	fmt.Println("limit:", request.Limit)
-	if request.IsVerified != nil {
-		fmt.Println("verified:", *request.IsVerified)
+	if request.ChatID == "" { //read all chats with Chat SearchOptions
+		h.readAllChats(c, &request)
+	} else if request.ChatID != "" {
+		h.readSingleChat(c, request.ChatID)
 	}
+}
 
-	chats, err := h.appManager.ReadAllChats(&request)
+// Private helper methods
+func (h *ChatHandler) readAllChats(c *gin.Context, options *chat.SearchOptions) {
+
+	chats, err := h.appManager.ReadAllChats(options)
 	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	fmt.Println("ReadAll match:", len(chats))
+	fmt.Println("title:", options.Title)
+	fmt.Println("offset:", options.Offset)
+	fmt.Println("limit:", options.Limit)
+	if options.IsVerified != nil {
+		fmt.Println("verified:", *options.IsVerified)
+	}
 
+	fmt.Println("ReadAllMessages match:", len(chats))
 	c.JSON(http.StatusOK, chats)
 }
 
+func (h *ChatHandler) readSingleChat(c *gin.Context, chatID string) {
+
+	fmt.Println("readSingleChat", chatID)
+	readChat, err := h.appManager.ReadChat(chatID)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, readChat)
+}
+
+//func (h *ChatHandler) ReadChatMessage(c *gin.Context) {
+//	chatID := c.Param("chatId")
+//	messageID := c.Param("messageId")
+//
+//	chatManager, err := h.appManager.GetChatManager(chatID)
+//	if err != nil {
+//		c.JSON(http.StatusNotFound, gin.H{"error": "Chat not found"})
+//		return
+//	}
+//
+//	message, err := chatManager.ReadMessage(messageID)
+//	if err != nil {
+//		return
+//	}
+//	c.JSON(http.StatusOK, message)
+//}
+//
+//func (h *ChatHandler) ReadChatMessages(c *gin.Context) {
+//
+//}
+
 // Update
-// @Summary  Update an existing chat
+// @Summary update an existing chat
 // @Description Updates an existing chat's properties, such as its members or title.
 // @Tags chat
 // @Accept json
@@ -174,7 +220,7 @@ func (h *ChatHandler) BuckUpdate(c *gin.Context) {
 }
 
 // Delete
-// @Summary Delete a single chat by ID
+// @Summary delete a single chat by ID
 // @Description Deletes a chat instance by its unique ID.
 // @Tags chat
 // @Accept json

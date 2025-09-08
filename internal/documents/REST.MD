@@ -35,8 +35,9 @@ curl -X POST http://localhost:50151/api/chats/018f3a8b-1b32-729a-f7e5-5467c1b2d3
 
 ### Read
 curl -X GET http://localhost:50151/api/chats/018f3a8b-1b32-7299-e6f4-12398a7b6c5d
-
+curl -X GET http://localhost:50151/api/chats//018f3a8b-1b32-7299-e6f4-12398a7b6c5d/messages/019928c6-9e55-7479-884e-92cc2e244eb2
 curl -X GET http://localhost:50151/api/chats
+curl -X GET "http://localhost:50151/api/chats?chatId=01992530-617f-7546-bf68-431fef3cd3ff"
 
 ### Update
 
@@ -51,10 +52,14 @@ curl -X POST http://localhost:50151/api/chats/bulk-delete \
 
 
 
+### ---------------------------------------------------------------
+## Messages
 
+### Read
 
+curl -X GET http://localhost:50151/api/messages/019928c3-895d-7286-9cd3-919cd4ddf9ea
 
-
+curl -X GET http://localhost:50151/api/messages
 
 
 

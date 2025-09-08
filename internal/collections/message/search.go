@@ -9,27 +9,27 @@ import (
 const MaxLimit = 1000
 
 type SearchOptions struct {
-	ID        string `json:"id"`
-	ChatID    string `json:"chatID"`    // Identifier of the chat
-	UserID    string `json:"userID"`    // Sender identifier
-	Content   string `json:"content"`   // Text content or caption
-	Type      string `json:"type"`      // text, photo, video, audio, document, voice, location, contact, poll, etc.
-	IsEdited  *bool  `json:"isEdited"`  // Has the message been edited?
-	IsPinned  *bool  `json:"isPinned"`  // Is this message pinned?
-	IsDeleted *bool  `json:"isDeleted"` // Soft delete flag
+	MessageID string `form:"messageId"`
+	ChatID    string `form:"chatId"`
+	UserID    string `form:"userId"`
+	Content   string `form:"content"`
+	Type      string `form:"type"`
+	IsEdited  *bool  `form:"isEdited"`
+	IsPinned  *bool  `form:"isPinned"`
+	IsDeleted *bool  `form:"isDeleted"`
 
 	// Date filters
-	CreatedAfter  *time.Time `json:"createdAfter,omitempty"`
-	CreatedBefore *time.Time `json:"createdBefore,omitempty"`
-	ActiveAfter   *time.Time `json:"activeAfter,omitempty"`
+	CreatedAfter  *time.Time `form:"createdAfter"`
+	CreatedBefore *time.Time `form:"createdBefore"`
+	ActiveAfter   *time.Time `form:"activeAfter"`
 
 	// Pagination
-	Offset int `json:"offset,omitempty"`
-	Limit  int `json:"limit,omitempty"`
+	Offset int `form:"offset"`
+	Limit  int `form:"limit"`
 
 	// Sorting
-	SortBy    string `json:"sortBy,omitempty"`    // "title", "created", "members", "lastActivity"
-	SortOrder string `json:"sortOrder,omitempty"` // "asc" or "desc"
+	SortBy    string `form:"sortBy"`
+	SortOrder string `form:"sortOrder"`
 }
 
 var LessFunks = map[string]search.LessFunction[*Message]{
@@ -56,7 +56,10 @@ func BuildMessageCriteria(with *SearchOptions) search.Criteria[*Message] {
 	return func(c *Message) bool {
 
 		// ID filter
-		if with.ID != "" && c.ID != with.ID {
+		if with.MessageID != "" && c.ID != with.MessageID {
+			return false
+		}
+		if with.Content != "" && c.Content != with.Content {
 			return false
 		}
 

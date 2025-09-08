@@ -9,7 +9,8 @@ import (
 )
 
 type SearchOptions struct {
-	ID                    string          `form:"id,omitempty"`
+	ChatID                string          `form:"chatId,omitempty"`
+	MessageID             string          `form:"messageId,omitempty"`
 	Type                  string          `form:"type,omitempty"` // "private", "group", "channel", "supergroup"
 	Title                 string          `form:"title,omitempty"`
 	Username              string          `form:"username,omitempty"` // Unique identifier for public channels/groups
@@ -80,7 +81,7 @@ func BuildChatCriteria(with *SearchOptions) search.Criteria[*Chat] {
 	return func(c *Chat) bool {
 
 		// ID filter
-		if with.ID != "" && c.ID != with.ID {
+		if with.ChatID != "" && c.ID != with.ChatID {
 			return false
 		}
 
