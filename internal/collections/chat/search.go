@@ -27,7 +27,7 @@ type SearchOptions struct {
 	IsScam                *bool           `form:"isScam,omitempty"`
 	IsFake                *bool           `form:"isFake,omitempty"`
 	InviteLink            string          `form:"inviteLink,omitempty"`         // Generated invite link
-	LinkedChatId          int             `form:"linkedChatId,omitempty"`       // Linked discussion chat for channels
+	LinkedChatID          int             `form:"linkedChatId,omitempty"`       // Linked discussion chat for channels
 	Location              *Location       `form:"location,omitempty"`           // For location-based chats
 	Members               *[]Member       `form:"members,omitempty"`            // Detailed member list
 	ParticipantsCount     int             `form:"participantsCount,omitempty"`  // Cache member count

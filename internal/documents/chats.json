@@ -6,7 +6,7 @@
     "username": "",
     "description": "One-on-one conversation.",
     "avatar": "https://example.com/avatars/user_alex.png",
-    "pinnedMessageId": 0,
+    "pinnedMessageId": "",
     "messageAutoDeleteTime": 0,
     "permissions": {
       "canSendMessages": true,
@@ -25,17 +25,17 @@
     "isScam": false,
     "isFake": false,
     "inviteLink": "",
-    "linkedChatId": 0,
+    "linkedChatId": "",
     "location": null,
     "members": [
       {
-        "userID": "018f3a8b-1b32-7290-b1d5-92716a445330",
+        "userId": "018f3a8b-1b32-7290-b1d5-92716a445330",
         "role": "member",
         "joinedAt": "2025-08-17T15:30:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7291-a1c8-29817a544561",
+        "userId": "018f3a8b-1b32-7291-a1c8-29817a544561",
         "role": "member",
         "joinedAt": "2025-08-17T15:30:00Z",
         "customTitle": ""
@@ -54,7 +54,7 @@
       "id": "018f3a8c-1b32-7290-b1d5-92716a445330",
       "text": "Hey, what's up?",
       "type": "text",
-      "authorId": 0,
+      "authorId": "",
       "timestamp": "2025-08-18T10:00:00Z"
     },
     "isPinned": false,
@@ -72,7 +72,7 @@
     "username": "project_omega_team",
     "description": "Collaboration on Project Omega.",
     "avatar": "https://example.com/avatars/project_omega.png",
-    "pinnedMessageId": 123,
+    "pinnedMessageId": "",
     "messageAutoDeleteTime": 0,
     "permissions": {
       "canSendMessages": true,
@@ -91,29 +91,29 @@
     "isScam": false,
     "isFake": false,
     "inviteLink": "https://example.com/join/project_omega",
-    "linkedChatId": 0,
+    "linkedChatId": "",
     "location": null,
     "members": [
       {
-        "userID": "018f3a8b-1b32-7290-b1d5-92716a445330",
+        "userId": "018f3a8b-1b32-7290-b1d5-92716a445330",
         "role": "creator",
         "joinedAt": "2025-08-16T09:00:00Z",
         "customTitle": "Project Lead"
       },
       {
-        "userID": "018f3a8b-1b32-7291-a1c8-29817a544561",
+        "userId": "018f3a8b-1b32-7291-a1c8-29817a544561",
         "role": "admin",
         "joinedAt": "2025-08-16T09:00:00Z",
         "customTitle": "Team Coordinator"
       },
       {
-        "userID": "018f3a8b-1b32-7292-b2d9-1237a7b8c8d2",
+        "userId": "018f3a8b-1b32-7292-b2d9-1237a7b8c8d2",
         "role": "member",
         "joinedAt": "2025-08-16T09:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7293-c1d4-8765f4d1e2f3",
+        "userId": "018f3a8b-1b32-7293-c1d4-8765f4d1e2f3",
         "role": "admin",
         "joinedAt": "2024-08-16T09:00:00Z",
         "customTitle": "",
@@ -133,7 +133,7 @@
       "id": "018f3a8c-1b32-7291-b1d5-92716a445330",
       "text": "Meeting at 3 PM today.",
       "type": "text",
-      "authorId": 0,
+      "authorId": "",
       "timestamp": "2025-08-18T10:15:00Z"
     },
     "isPinned": true,
@@ -151,7 +151,7 @@
     "username": "tech_news_daily",
     "description": "The latest in tech news.",
     "avatar": "https://example.com/avatars/tech_news.png",
-    "pinnedMessageId": 0,
+    "pinnedMessageId": "",
     "messageAutoDeleteTime": 0,
     "permissions": {
       "canSendMessages": false,
@@ -170,23 +170,23 @@
     "isScam": false,
     "isFake": false,
     "inviteLink": "https://example.com/join/tech_news_daily",
-    "linkedChatId": 0,
+    "linkedChatId": "",
     "location": null,
     "members": [
       {
-        "userID": "018f3a8b-1b32-7290-b1d5-92716a445330",
+        "userId": "018f3a8b-1b32-7290-b1d5-92716a445330",
         "role": "creator",
         "joinedAt": "2025-08-15T12:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7291-a1c8-29817a544561",
+        "userId": "018f3a8b-1b32-7291-a1c8-29817a544561",
         "role": "admin",
         "joinedAt": "2025-08-15T12:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7292-b2d9-1237a7b8c8d2",
+        "userId": "018f3a8b-1b32-7292-b2d9-1237a7b8c8d2",
         "role": "member",
         "joinedAt": "2025-08-15T12:00:00Z",
         "customTitle": ""
@@ -205,7 +205,7 @@
       "id": "018f3a8c-1b32-7292-b1d5-92716a445330",
       "text": "New article on AI ethics just published.",
       "type": "text",
-      "authorId": 0,
+      "authorId": "",
       "timestamp": "2025-08-18T10:20:00Z"
     },
     "isPinned": false,
@@ -223,7 +223,7 @@
     "username": "global_devs",
     "description": "A community for developers worldwide.",
     "avatar": "https://example.com/avatars/devs_hub.png",
-    "pinnedMessageId": 789,
+    "pinnedMessageId": "",
     "messageAutoDeleteTime": 86400,
     "permissions": {
       "canSendMessages": true,
@@ -242,47 +242,47 @@
     "isScam": false,
     "isFake": false,
     "inviteLink": "https://example.com/join/global_devs",
-    "linkedChatId": 0,
+    "linkedChatId": "",
     "location": null,
     "members": [
       {
-        "userID": "018f3a8b-1b32-7290-b1d5-92716a445330",
+        "userId": "018f3a8b-1b32-7290-b1d5-92716a445330",
         "role": "creator",
         "joinedAt": "2025-08-14T18:00:00Z",
         "customTitle": "Mahdi Abdolmaleki"
       },
       {
-        "userID": "018f3a8b-1b32-7291-a1c8-29817a544561",
+        "userId": "018f3a8b-1b32-7291-a1c8-29817a544561",
         "role": "admin",
         "joinedAt": "2025-08-14T18:00:00Z",
         "customTitle": "Moderator"
       },
       {
-        "userID": "018f3a8b-1b32-7292-b2d9-1237a7b8c8d2",
+        "userId": "018f3a8b-1b32-7292-b2d9-1237a7b8c8d2",
         "role": "member",
         "joinedAt": "2025-08-14T18:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7293-c1d4-8765f4d1e2f3",
+        "userId": "018f3a8b-1b32-7293-c1d4-8765f4d1e2f3",
         "role": "member",
         "joinedAt": "2025-08-14T18:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7294-b3e1-5645a2b3d4e5",
+        "userId": "018f3a8b-1b32-7294-b3e1-5645a2b3d4e5",
         "role": "member",
         "joinedAt": "2025-08-14T18:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7295-a2c7-87654b4d4567",
+        "userId": "018f3a8b-1b32-7295-a2c7-87654b4d4567",
         "role": "member",
         "joinedAt": "2025-08-14T18:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7296-b3e1-92847c132d4e",
+        "userId": "018f3a8b-1b32-7296-b3e1-92847c132d4e",
         "role": "member",
         "joinedAt": "2025-08-14T18:00:00Z",
         "customTitle": ""
@@ -301,7 +301,7 @@
       "id": "018f3a8c-1b32-7293-b1d5-92716a445330",
       "text": "What's the best framework for a new web project?",
       "type": "text",
-      "authorId": 0,
+      "authorId": "",
       "timestamp": "2025-08-18T10:30:00Z"
     },
     "isPinned": false,
@@ -319,7 +319,7 @@
     "username": "",
     "description": "Another one-on-one conversation.",
     "avatar": "https://example.com/avatars/user_blake.png",
-    "pinnedMessageId": 0,
+    "pinnedMessageId": "",
     "messageAutoDeleteTime": 0,
     "permissions": {
       "canSendMessages": true,
@@ -338,17 +338,17 @@
     "isScam": false,
     "isFake": false,
     "inviteLink": "",
-    "linkedChatId": 0,
+    "linkedChatId": "",
     "location": null,
     "members": [
       {
-        "userID": "018f3a8b-1b32-7294-b3e1-5645a2b3d4e5",
+        "userId": "018f3a8b-1b32-7294-b3e1-5645a2b3d4e5",
         "role": "member",
         "joinedAt": "2025-08-17T14:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7295-a2c7-87654b4d4567",
+        "userId": "018f3a8b-1b32-7295-a2c7-87654b4d4567",
         "role": "member",
         "joinedAt": "2025-08-17T14:00:00Z",
         "customTitle": ""
@@ -367,7 +367,7 @@
       "id": "018f3a8c-1b32-7294-b1d5-92716a445330",
       "text": "Sounds good!",
       "type": "text",
-      "authorId": 0,
+      "authorId": "",
       "timestamp": "2025-08-18T09:45:00Z"
     },
     "isPinned": false,
@@ -385,7 +385,7 @@
     "username": "book_club_2025",
     "description": "Discussing our favorite books.",
     "avatar": "https://example.com/avatars/book_club.png",
-    "pinnedMessageId": 0,
+    "pinnedMessageId": "",
     "messageAutoDeleteTime": 0,
     "permissions": {
       "canSendMessages": true,
@@ -404,23 +404,23 @@
     "isScam": false,
     "isFake": false,
     "inviteLink": "https://example.com/join/book_club_2025",
-    "linkedChatId": 0,
+    "linkedChatId": "",
     "location": null,
     "members": [
       {
-        "userID": "018f3a8b-1b32-7296-b3e1-92847c132d4e",
+        "userId": "018f3a8b-1b32-7296-b3e1-92847c132d4e",
         "role": "creator",
         "joinedAt": "2025-08-16T15:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7297-c4f2-987123a6b5c4",
+        "userId": "018f3a8b-1b32-7297-c4f2-987123a6b5c4",
         "role": "admin",
         "joinedAt": "2025-08-16T15:00:00Z",
         "customTitle": "Literary Curator"
       },
       {
-        "userID": "018f3a8b-1b32-7298-d5e3-5674a2d3e4f5",
+        "userId": "018f3a8b-1b32-7298-d5e3-5674a2d3e4f5",
         "role": "member",
         "joinedAt": "2025-08-16T15:00:00Z",
         "customTitle": ""
@@ -439,7 +439,7 @@
       "id": "018f3a8c-1b32-7295-b1d5-92716a445330",
       "text": "What's everyone's thoughts on the new chapter?",
       "type": "text",
-      "authorId": 0,
+      "authorId": "",
       "timestamp": "2025-08-18T10:45:00Z"
     },
     "isPinned": false,
@@ -457,7 +457,7 @@
     "username": "writing_prompts",
     "description": "Daily inspiration for writers.",
     "avatar": "https://example.com/avatars/writing.png",
-    "pinnedMessageId": 0,
+    "pinnedMessageId": "",
     "messageAutoDeleteTime": 0,
     "permissions": {
       "canSendMessages": false,
@@ -476,23 +476,23 @@
     "isScam": false,
     "isFake": false,
     "inviteLink": "https://example.com/join/writing_prompts",
-    "linkedChatId": 0,
+    "linkedChatId": "",
     "location": null,
     "members": [
       {
-        "userID": "018f3a8b-1b32-7297-c4f2-987123a6b5c4",
+        "userId": "018f3a8b-1b32-7297-c4f2-987123a6b5c4",
         "role": "creator",
         "joinedAt": "2025-08-15T08:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7298-d5e3-5674a2d3e4f5",
+        "userId": "018f3a8b-1b32-7298-d5e3-5674a2d3e4f5",
         "role": "admin",
         "joinedAt": "2025-08-15T08:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7299-e6f4-12398a7b6c5d",
+        "userId": "018f3a8b-1b32-7299-e6f4-12398a7b6c5d",
         "role": "member",
         "joinedAt": "2025-08-15T08:00:00Z",
         "customTitle": ""
@@ -511,7 +511,7 @@
       "id": "018f3a8c-1b32-7296-b1d5-92716a445330",
       "text": "Prompt: A city where all sounds are visible.",
       "type": "text",
-      "authorId": 0,
+      "authorId": "",
       "timestamp": "2025-08-18T08:00:00Z"
     },
     "isPinned": false,
@@ -529,7 +529,7 @@
     "username": "local_hikers",
     "description": "For hikers in the local area.",
     "avatar": "https://example.com/avatars/hikers.png",
-    "pinnedMessageId": 901,
+    "pinnedMessageId": "",
     "messageAutoDeleteTime": 0,
     "permissions": {
       "canSendMessages": true,
@@ -548,7 +548,7 @@
     "isScam": false,
     "isFake": false,
     "inviteLink": "https://example.com/join/local_hikers",
-    "linkedChatId": 0,
+    "linkedChatId": "",
     "location": {
       "longitude": -0.1278,
       "latitude": 51.5074,
@@ -556,19 +556,19 @@
     },
     "members": [
       {
-        "userID": "018f3a8b-1b32-7298-d5e3-5674a2d3e4f5",
+        "userId": "018f3a8b-1b32-7298-d5e3-5674a2d3e4f5",
         "role": "creator",
         "joinedAt": "2025-08-14T10:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-7299-e6f4-12398a7b6c5d",
+        "userId": "018f3a8b-1b32-7299-e6f4-12398a7b6c5d",
         "role": "admin",
         "joinedAt": "2025-08-14T10:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-729a-f7e5-5467c1b2d3e4",
+        "userId": "018f3a8b-1b32-729a-f7e5-5467c1b2d3e4",
         "role": "member",
         "joinedAt": "2025-08-14T10:00:00Z",
         "customTitle": ""
@@ -587,7 +587,7 @@
       "id": "018f3a8c-1b32-7297-b1d5-92716a445330",
       "text": "Anyone joining the hike this Saturday?",
       "type": "text",
-      "authorId": 0,
+      "authorId": "",
       "timestamp": "2025-08-18T10:00:00Z"
     },
     "isPinned": true,
@@ -605,7 +605,7 @@
     "username": "",
     "description": "A quick chat about weekend plans.",
     "avatar": "https://example.com/avatars/user_chris.png",
-    "pinnedMessageId": 0,
+    "pinnedMessageId": "",
     "messageAutoDeleteTime": 0,
     "permissions": {
       "canSendMessages": true,
@@ -624,17 +624,17 @@
     "isScam": false,
     "isFake": false,
     "inviteLink": "",
-    "linkedChatId": 0,
+    "linkedChatId": "",
     "location": null,
     "members": [
       {
-        "userID": "018f3a8b-1b32-729a-f7e5-5467c1b2d3e4",
+        "userId": "018f3a8b-1b32-729a-f7e5-5467c1b2d3e4",
         "role": "member",
         "joinedAt": "2025-08-17T11:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-729b-8f90-1234a5b6c7d8",
+        "userId": "018f3a8b-1b32-729b-8f90-1234a5b6c7d8",
         "role": "member",
         "joinedAt": "2025-08-17T11:00:00Z",
         "customTitle": ""
@@ -652,7 +652,7 @@
       "id": "018f3a8c-1b32-7298-b1d5-92716a445330",
       "text": "See you there!",
       "type": "text",
-      "authorId": 0,
+      "authorId": "",
       "timestamp": "2025-08-18T09:30:00Z"
     },
     "isPinned": false,
@@ -670,7 +670,7 @@
     "username": "travel_bugs",
     "description": "Planning and sharing travel experiences.",
     "avatar": "https://example.com/avatars/travel.png",
-    "pinnedMessageId": 0,
+    "pinnedMessageId": "",
     "messageAutoDeleteTime": 0,
     "permissions": {
       "canSendMessages": true,
@@ -689,23 +689,23 @@
     "isScam": false,
     "isFake": false,
     "inviteLink": "https://example.com/join/travel_bugs",
-    "linkedChatId": 0,
+    "linkedChatId": "",
     "location": null,
     "members": [
       {
-        "userID": "018f3a8b-1b32-729b-8f90-1234a5b6c7d8",
+        "userId": "018f3a8b-1b32-729b-8f90-1234a5b6c7d8",
         "role": "creator",
         "joinedAt": "2025-08-16T18:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-729c-a1b2-9876a5b4c3d2",
+        "userId": "018f3a8b-1b32-729c-a1b2-9876a5b4c3d2",
         "role": "admin",
         "joinedAt": "2025-08-16T18:00:00Z",
         "customTitle": "Group Organizer"
       },
       {
-        "userID": "018f3a8b-1b32-729d-b2c3-1456a2b3d4e5",
+        "userId": "018f3a8b-1b32-729d-b2c3-1456a2b3d4e5",
         "role": "member",
         "joinedAt": "2025-08-16T18:00:00Z",
         "customTitle": ""
@@ -724,7 +724,7 @@
       "id": "018f3a8c-1b32-7299-b1d5-92716a445330",
       "text": "Just booked my flight to Japan!",
       "type": "text",
-      "authorId": 0,
+      "authorId": "",
       "timestamp": "2025-08-18T10:10:00Z"
     },
     "isPinned": false,
@@ -742,7 +742,7 @@
     "username": "daily_quotes",
     "description": "A new inspiring quote every day.",
     "avatar": "https://example.com/avatars/quotes.png",
-    "pinnedMessageId": 0,
+    "pinnedMessageId": "",
     "messageAutoDeleteTime": 0,
     "permissions": {
       "canSendMessages": false,
@@ -761,17 +761,17 @@
     "isScam": false,
     "isFake": false,
     "inviteLink": "https://example.com/join/daily_quotes",
-    "linkedChatId": 0,
+    "linkedChatId": "",
     "location": null,
     "members": [
       {
-        "userID": "018f3a8b-1b32-729c-a1b2-9876a5b4c3d2",
+        "userId": "018f3a8b-1b32-729c-a1b2-9876a5b4c3d2",
         "role": "creator",
         "joinedAt": "2025-08-15T09:00:00Z",
         "customTitle": ""
       },
       {
-        "userID": "018f3a8b-1b32-729d-b2c3-1456a2b3d4e5",
+        "userId": "018f3a8b-1b32-729d-b2c3-1456a2b3d4e5",
         "role": "admin",
         "joinedAt": "2025-08-15T09:00:00Z",
         "customTitle": ""
@@ -790,7 +790,7 @@
       "id": "018f3a8c-1b32-729a-b1d5-92716a445330",
       "text": "The only way to do great work is to love what you do. - Steve Jobs",
       "type": "text",
-      "authorId": 0,
+      "authorId": "",
       "timestamp": "2025-08-18T09:00:00Z"
     },
     "isPinned": false,
@@ -808,7 +808,7 @@
     "username": "code_review",
     "description": "Get feedback on your code.",
     "avatar": "https://example.com/avatars/code.png",
-    "pinnedMessageId": 456,
+    "pinnedMessageId": "",
     "messageAutoDeleteTime": 0,
     "permissions": {
       "canSendMessages": true,
@@ -827,17 +827,17 @@
     "isScam": false,
     "isFake": false,
     "inviteLink": "https://example.com/join/code_review",
-    "linkedChatId": 0,
+    "linkedChatId": "",
     "location": null,
     "members": [
       {
-        "userID": "018f3a8b-1b32-729d-b2c3-1456a2b3d4e5",
+        "userId": "018f3a8b-1b32-729d-b2c3-1456a2b3d4e5",
         "role": "creator",
         "joinedAt": "2025-08-14T15:00:00Z",
         "customTitle": "Mahdi Abdolmaleki"
       },
       {
-        "userID": "018f3a8b-1b32-729e-c3d4-9876543a21b",
+        "userId": "018f3a8b-1b32-729e-c3d4-9876543a21b",
         "role": "admin",
         "joinedAt": "2025-08-14T15:00:00Z",
         "customTitle": "Senior Reviewer"
@@ -856,7 +856,7 @@
       "id": "018f3a8c-1b32-729b-b1d5-92716a445330",
       "text": "Code snippet for review: function bubbleSort() {...}",
       "type": "code",
-      "authorId": 0,
+      "authorId": "",
       "timestamp": "2025-08-18T10:55:00Z"
     },
     "isPinned": false,

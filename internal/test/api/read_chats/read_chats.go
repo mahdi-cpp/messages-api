@@ -141,7 +141,7 @@ func main() {
 
 	options := chat.SearchOptions{
 		//IsVerified: &isVerified,
-		Offset:    3,
+		Offset:    0,
 		Limit:     1,
 		SortBy:    "id",
 		SortOrder: "start",

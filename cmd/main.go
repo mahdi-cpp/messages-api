@@ -46,9 +46,13 @@ func main() {
 
 	// 2. Instantiate handlers.
 	chatHandler := handlers.NewChatHandler(appManager)
+	messageHandler := handlers.NewMessageHandler(appManager)
 
 	// 3. Set up all routes using the single router instance.
-	setupRoutes(router, appManager, chatHandler)
+	setupRoutes(router, appManager,
+		chatHandler,
+		messageHandler,
+	)
 
 	// 4. Start the server with the fully configured router.
 	startServer(router)

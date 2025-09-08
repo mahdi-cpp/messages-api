@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -121,22 +122,22 @@ func (m *Manager) notifyUserJoined(userID, username, chatID string) {
 	m.hub.BroadcastToChat(chatID, joinMessage)
 }
 
-func (m *Manager) CreateChat(newChat *chat.Chat) error {
+func (m *Manager) ChatCreate(newChat *chat.Chat) (*chat.Chat, error) {
 
 	chatID, err := utils.GenerateUUID()
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return nil, err
 	}
 	newChat.ID = chatID
 
 	_, err = m.chatsCollection.Create(newChat)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return newChat, nil
 	//chatManager, err := NewChatManager(create)
 	//if err != nil {
 	//	panic(err)
@@ -206,8 +207,31 @@ func (m *Manager) OpenChat(chatID string) (*chat.Chat, error) {
 	return nil, nil
 }
 
-// saveMessagesToFile listens for messages and saves them to a log file.
-// این تابع به پیام‌ها گوش می‌دهد و آن‌ها را در یک فایل log ذخیره می‌کند.
+func (m *Manager) MessageCreate(newMessage *message.Message) (*message.Message, error) {
+
+	chatManager, ok := m.chatManagers[newMessage.ChatID]
+	if !ok {
+		fmt.Println("chat not found.")
+		return nil, errors.New("chat not found")
+	}
+
+	id, err := utils.GenerateUUID()
+	if err != nil {
+		fmt.Printf("Failed to generate uuid: %v", err)
+		return nil, err
+	}
+
+	newMessage.ID = id
+
+	_, err = chatManager.messages.Create(newMessage)
+	if err != nil {
+		fmt.Println("Failed to create message to file.")
+		return nil, err
+	}
+
+	return newMessage, nil
+}
+
 func (m *Manager) saveMessagesToFile() {
 
 	for msg := range m.messagesToSave {
@@ -227,15 +251,15 @@ func (m *Manager) saveMessagesToFile() {
 		}
 
 		newMessage := &message.Message{
-			Type:      "message",
-			ID:        id,
-			Width:     450,
-			UserID:    msg.UserID,
-			ChatID:    config.TestChatID,
-			Content:   msg.Content,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-			Version:   "1",
+			MessageType: "message",
+			ID:          id,
+			Width:       450,
+			UserID:      msg.UserID,
+			ChatID:      config.TestChatID,
+			Content:     msg.Content,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Version:     "1",
 		}
 
 		_, err = chatManager.messages.Create(newMessage)
@@ -279,7 +303,7 @@ func (m *Manager) ReadAllChats(chatOptions *chat.SearchOptions) ([]*chat.Chat, e
 		search.SortIndexedItems(results, lessFn)
 	}
 
-	fmt.Println("ReadAllChats: ", len(results))
+	//fmt.Println("ReadAllChats: ", len(results))
 
 	for _, result := range results {
 		userChats = append(userChats, result.Value)

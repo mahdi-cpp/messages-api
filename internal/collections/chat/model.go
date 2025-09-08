@@ -13,43 +13,43 @@ func (a *Chat) GetUpdatedAt() time.Time  { return a.UpdatedAt }
 
 type Chat struct {
 	ID                    string          `json:"id"`
-	Type                  string          `json:"type"` // "private", "group", "channel", "supergroup"
+	Type                  string          `json:"type"`
 	Title                 string          `json:"title"`
-	Username              string          `json:"username"` // Unique identifier for public channels/groups
-	Description           string          `json:"description"`
-	Avatar                string          `json:"avatar"`                // Chat profile photo
-	PinnedMessageId       int             `json:"pinnedMessageId"`       // ID of pinned message
-	MessageAutoDeleteTime int             `json:"messageAutoDeleteTime"` // Auto-delete timer
-	Permissions           Permissions     `json:"permissions"`           // Default chat permissions
-	SlowModeDelay         int             `json:"slowModeDelay"`         // Slow mode delay in seconds
-	StickerSetName        string          `json:"stickerSetName"`        // Name of group sticker set
-	CanSetStickerSet      bool            `json:"canSetStickerSet"`      // Can set sticker set
+	Username              string          `json:"username,omitempty"`
+	Description           string          `json:"description,omitempty"`
+	Avatar                string          `json:"avatar,omitempty"`
+	PinnedMessageID       string          `json:"pinnedMessageId,omitempty"` // Changed type to string for consistency
+	MessageAutoDeleteTime int             `json:"messageAutoDeleteTime,omitempty"`
+	Permissions           Permissions     `json:"permissions"`
+	SlowModeDelay         int             `json:"slowModeDelay,omitempty"`
+	StickerSetName        string          `json:"stickerSetName,omitempty"`
+	CanSetStickerSet      bool            `json:"canSetStickerSet,omitempty"`
 	IsVerified            bool            `json:"isVerified"`
 	IsRestricted          bool            `json:"isRestricted"`
 	IsCreator             bool            `json:"isCreator"`
 	IsScam                bool            `json:"isScam"`
 	IsFake                bool            `json:"isFake"`
-	InviteLink            string          `json:"inviteLink"`         // Generated invite link
-	LinkedChatId          int             `json:"linkedChatId"`       // Linked discussion chat for channels
-	Location              *Location       `json:"location"`           // For location-based chats
-	Members               []Member        `json:"members"`            // Detailed member list
-	ParticipantsCount     int             `json:"participantsCount"`  // Cache member count
-	ActiveUsernames       []string        `json:"activeUsernames"`    // For multiple usernames
-	AvailableReactions    []string        `json:"availableReactions"` // Available emoji reactions
-	Theme                 string          `json:"theme"`              // Chat theme
-	UnreadCount           int             `json:"unreadCount"`        // Unread message count
-	LastMessage           *MessagePreview `json:"lastMessage"`        // Last message preview
-	IsPinned              bool            `json:"isPinned"`           // Pinned in user's list
-	PinOrder              int             `json:"pinOrder"`           // Position in pinned list
-	MuteUntil             time.Time       `json:"muteUntil"`          // Mute notification until
+	InviteLink            string          `json:"inviteLink,omitempty"`
+	LinkedChatID          string          `json:"linkedChatId,omitempty"` // Changed type to string for consistency
+	Location              *Location       `json:"location,omitempty"`
+	Members               []Member        `json:"members,omitempty"`
+	ParticipantsCount     int             `json:"participantsCount"`
+	ActiveUsernames       []string        `json:"activeUsernames,omitempty"`
+	AvailableReactions    []string        `json:"availableReactions,omitempty"`
+	Theme                 string          `json:"theme,omitempty"`
+	UnreadCount           int             `json:"unreadCount,omitempty"`
+	LastMessage           *MessagePreview `json:"lastMessage,omitempty"`
+	IsPinned              bool            `json:"isPinned,omitempty"`
+	PinOrder              int             `json:"pinOrder,omitempty"`
+	MuteUntil             *time.Time      `json:"muteUntil,omitempty"`
 	CreatedAt             time.Time       `json:"createdAt"`
 	UpdatedAt             time.Time       `json:"updatedAt"`
-	DeletedAt             *time.Time      `json:"deletedAt"` // Use pointer for optional field
-	Version               int             `json:"version"`   // Use int for versioning
+	DeletedAt             *time.Time      `json:"deletedAt,omitempty"`
+	Version               int             `json:"version"`
 }
 
 type Member struct {
-	UserID      string    `json:"userID"`
+	UserID      string    `json:"userId"`
 	Role        string    `json:"role"`        // "member", "admin", "creator"
 	CustomTitle string    `json:"customTitle"` // For custom admin titles
 	IsActive    bool      `json:"isActive"`
@@ -77,7 +77,7 @@ type Location struct {
 type MessagePreview struct {
 	ID        string    `json:"id"`
 	Text      string    `json:"text"`
-	Type      string    `json:"type"` // "text", "photo", "video", etc.
-	AuthorId  int       `json:"authorId"`
+	Type      string    `json:"type"`
+	AuthorID  string    `json:"authorId"` // Changed name and type for consistency
 	Timestamp time.Time `json:"timestamp"`
 }

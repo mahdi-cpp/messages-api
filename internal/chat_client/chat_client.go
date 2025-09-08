@@ -106,6 +106,7 @@ func (c *ChatClient) Connect() error {
 
 // readPump handles incoming message from the server
 func (c *ChatClient) readPump() {
+
 	defer func() {
 		c.conn.Close()
 		c.isConnected = false
@@ -149,7 +150,7 @@ func (c *ChatClient) handleMessages() {
 // handleMessage processes different message types
 func (c *ChatClient) handleMessage(msg message.Message) {
 
-	switch msg.Type {
+	switch msg.MessageType {
 	case "message":
 		log.Printf("{ChatID:%s} %s: %s", msg.ChatID, msg.UserID, msg.Content)
 	case "system":
@@ -171,7 +172,7 @@ func (c *ChatClient) handleMessage(msg message.Message) {
 	case "error":
 		log.Printf("ERROR: ")
 	default:
-		log.Printf("Unknown message type: %s", msg.Type)
+		log.Printf("Unknown message type: %s", msg.MessageType)
 	}
 }
 
@@ -182,11 +183,11 @@ func (c *ChatClient) SendMessage(content string) error {
 	}
 
 	message1 := message.Message{
-		Type:      "message",
-		Content:   content,
-		ChatID:    c.currentChat,
-		UserID:    c.userID,
-		CreatedAt: time.Now(),
+		MessageType: "message",
+		Content:     content,
+		ChatID:      c.currentChat,
+		UserID:      c.userID,
+		CreatedAt:   time.Now(),
 	}
 
 	return c.sendJSON(message1)
@@ -199,9 +200,9 @@ func (c *ChatClient) JoinChat(chatID string) error {
 	}
 
 	message1 := message.Message{
-		Type:   "join_chat",
-		ChatID: chatID,
-		UserID: c.userID,
+		MessageType: "join_chat",
+		ChatID:      chatID,
+		UserID:      c.userID,
 	}
 
 	if err := c.sendJSON(message1); err != nil {
@@ -224,9 +225,9 @@ func (c *ChatClient) LeaveChat(chatID string) error {
 	}
 
 	message1 := message.Message{
-		Type:   "leave_chat",
-		ChatID: chatID,
-		UserID: c.userID,
+		MessageType: "leave_chat",
+		ChatID:      chatID,
+		UserID:      c.userID,
 	}
 
 	if err := c.sendJSON(message1); err != nil {
@@ -253,10 +254,10 @@ func (c *ChatClient) CreateChat(chatName string) error {
 	chatID := generateChatID(chatName)
 
 	message1 := message.Message{
-		Type:    "create_chat",
-		ChatID:  chatID,
-		Content: chatName,
-		UserID:  c.userID,
+		MessageType: "create_chat",
+		ChatID:      chatID,
+		Content:     chatName,
+		UserID:      c.userID,
 	}
 
 	return c.sendJSON(message1)
@@ -269,9 +270,9 @@ func (c *ChatClient) OpenChat(chatID string) error {
 	}
 
 	message1 := message.Message{
-		Type:   "chat_open",
-		ChatID: chatID,
-		UserID: c.userID,
+		MessageType: "chat_open",
+		ChatID:      chatID,
+		UserID:      c.userID,
 	}
 
 	return c.sendJSON(message1)
@@ -284,7 +285,7 @@ func (c *ChatClient) ListChats() error {
 	}
 
 	message1 := message.Message{
-		Type: "get_chats",
+		MessageType: "get_chats",
 	}
 
 	return c.sendJSON(message1)
@@ -298,10 +299,10 @@ func (c *ChatClient) SendTypingIndicator(typing bool) error {
 	}
 
 	message1 := message.Message{
-		Type:    "typing",
-		ChatID:  c.currentChat,
-		UserID:  c.userID,
-		Content: fmt.Sprintf("%t", typing),
+		MessageType: "typing",
+		ChatID:      c.currentChat,
+		UserID:      c.userID,
+		Content:     fmt.Sprintf("%t", typing),
 	}
 
 	return c.sendJSON(message1)
@@ -314,9 +315,9 @@ func (c *ChatClient) SendSeenIndicator() error {
 	}
 
 	message1 := message.Message{
-		Type:   "seen",
-		ChatID: c.currentChat,
-		UserID: c.userID,
+		MessageType: "seen",
+		ChatID:      c.currentChat,
+		UserID:      c.userID,
 	}
 
 	return c.sendJSON(message1)

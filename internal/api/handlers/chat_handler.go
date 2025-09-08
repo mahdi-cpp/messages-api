@@ -20,8 +20,15 @@ func NewChatHandler(appManager *application.Manager) *ChatHandler {
 	}
 }
 
-// Create godoc
-// @Router /api/chats post
+// Create @Summary     Create a new chat
+// @Description Creates a new chat instance. The request body should contain a list of members to include in the chat.
+// @Tags        chat
+// @Accept      json
+// @Produce     json
+// @Param       request body chat.Chat true "Chat creation request body"
+// @Success     201 {object} chat.Chat "Chat created successfully"
+// @Failure     400 {string
+// @Router      /chats [post]
 func (h *ChatHandler) Create(c *gin.Context) {
 
 	var request *chat.Chat
@@ -32,14 +39,24 @@ func (h *ChatHandler) Create(c *gin.Context) {
 
 	fmt.Println(request.Members)
 
-	err := h.appManager.CreateChat(request)
+	newChat, err := h.appManager.ChatCreate(request)
 	if err != nil {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"chat": "created"})
+	c.JSON(http.StatusCreated, newChat)
 }
 
+// Read
+// @Description Retrieves a single chat instance by its unique ID.
+// @Tags chat
+// @Accept json
+// @Produce json
+// @Param id path string true "Chat ID"
+// @Success 200 {object} chat.Chat "Chat retrieved successfully"
+// @Failure 404 {string} string "Chat not found"
+// @Failure 500 {string} string "Internal server error"
+// @Router /chats/{id} [get]
 func (h *ChatHandler) Read(c *gin.Context) {
 
 	chatID := c.Param("id")
@@ -49,9 +66,24 @@ func (h *ChatHandler) Read(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"chat": chat1})
+	fmt.Println(chat1.Title)
+
+	c.JSON(http.StatusOK, chat1)
 }
 
+// ReadAll
+// @Summary Get a list of chats
+// @Description Retrieves a list of chats, with optional search, pagination, and filtering.
+// @Tags chat
+// @Accept json
+// @Produce json
+// @Param title query string false "Filter by chat title"
+// @Param offset query int false "Pagination offset"
+// @Param limit query int false "Pagination limit"
+// @Param isVerified query boolean false "Filter by verification status"
+// @Success 200 {array} chat.Chat "List of chats retrieved successfully"
+// @Failure 500 {string} string "Internal server error"
+// @Router /chats [get]
 func (h *ChatHandler) ReadAll(c *gin.Context) {
 
 	var request chat.SearchOptions
@@ -73,9 +105,23 @@ func (h *ChatHandler) ReadAll(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"chats": chats})
+	fmt.Println("ReadAll match:", len(chats))
+
+	c.JSON(http.StatusOK, chats)
 }
 
+// Update
+// @Summary  Update an existing chat
+// @Description Updates an existing chat's properties, such as its members or title.
+// @Tags chat
+// @Accept json
+// @Produce json
+// @Param id path string true "Chat ID"
+// @Param request body chat.UpdateOptions true "Chat update options"
+// @Success 200 {object} object "Chat updated successfully"
+// @Failure 304 {string} string "Not Modified"
+// @Failure 400 {string} string "Invalid JSON body"
+// @Router /chats/{id} [put]
 func (h *ChatHandler) Update(c *gin.Context) {
 
 	chatID := c.Param("id")
@@ -100,6 +146,16 @@ func (h *ChatHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "successfully updated"})
 }
 
+// BuckUpdate
+// @Summary Bulk update multiple chats
+// @Description Updates multiple chats based on a list of IDs provided in the request body.
+// @Tags chat
+// @Accept json
+// @Produce json
+// @Param request body BuckUpdateChats true "List of chat IDs to update"
+// @Success 200 {object} object "Chats updated successfully"
+// @Failure 400 {string} string "Invalid JSON body"
+// @Router /chats/bulk-update [put]
 func (h *ChatHandler) BuckUpdate(c *gin.Context) {
 	var request BuckUpdateChats
 
@@ -117,6 +173,15 @@ func (h *ChatHandler) BuckUpdate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Chats updated successfully"})
 }
 
+// Delete
+// @Summary Delete a single chat by ID
+// @Description Deletes a chat instance by its unique ID.
+// @Tags chat
+// @Accept json
+// @Produce json
+// @Param id path string true "Chat ID"
+// @Success 200 {object} object "Chat deleted successfully"
+// @Router /chats/{id} [delete]
 func (h *ChatHandler) Delete(c *gin.Context) {
 	// Get the ID from the URL path
 	id := c.Param("id")
@@ -129,14 +194,16 @@ func (h *ChatHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Chat with ID %s deleted", id)})
 }
 
-type BuckUpdateChats struct {
-	Ids []string `json:"ids"`
-}
-
-type BuckDeleteChats struct {
-	Ids []string `json:"ids"`
-}
-
+// BuckDelete
+// @Summary Bulk delete multiple chats
+// @Description Deletes multiple chats based on a list of IDs provided in the request body.
+// @Tags chat
+// @Accept json
+// @Produce json
+// @Param request body BuckDeleteChats true "List of chat IDs to delete"
+// @Success 200 {object} object "Chats deleted successfully"
+// @Failure 400 {string} string "Invalid JSON body"
+// @Router /chats/bulk-delete [delete]
 func (h *ChatHandler) BuckDelete(c *gin.Context) {
 	var request BuckDeleteChats
 
@@ -153,5 +220,3 @@ func (h *ChatHandler) BuckDelete(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Chats deleted successfully"})
 }
-
-func (h *ChatHandler) List(c *gin.Context) {}

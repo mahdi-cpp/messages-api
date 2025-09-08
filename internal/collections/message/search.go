@@ -111,6 +111,12 @@ func Search(chats []*Message, with *SearchOptions) []*Message {
 
 	// Apply pagination
 	start := with.Offset
+
+	// Check if the start index is out of bounds. If so, return an empty slice.
+	if start >= len(final) {
+		return []*Message{}
+	}
+
 	end := start + with.Limit
 	if end > len(final) {
 		end = len(final)

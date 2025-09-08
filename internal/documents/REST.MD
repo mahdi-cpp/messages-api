@@ -34,7 +34,7 @@ curl -X POST http://localhost:50151/api/chats/018f3a8b-1b32-729a-f7e5-5467c1b2d3
 }'
 
 ### Read
-curl -X GET http://localhost:50151/api/chats/018f3a8b-1b32-7293-c1d4-8765f4d1e2f3
+curl -X GET http://localhost:50151/api/chats/018f3a8b-1b32-7299-e6f4-12398a7b6c5d
 
 curl -X GET http://localhost:50151/api/chats
 
