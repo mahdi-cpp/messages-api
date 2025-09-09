@@ -8,6 +8,8 @@ import (
 
 const MaxLimit = 1000
 
+// Steps: Filters->Sorting->Pagination
+
 type SearchOptions struct {
 	MessageID string `form:"messageId"`
 	ChatID    string `form:"chatId"`
@@ -23,13 +25,13 @@ type SearchOptions struct {
 	CreatedBefore *time.Time `form:"createdBefore"`
 	ActiveAfter   *time.Time `form:"activeAfter"`
 
-	// Pagination
-	Offset int `form:"offset"`
-	Limit  int `form:"limit"`
-
 	// Sorting
-	SortBy    string `form:"sortBy"`
-	SortOrder string `form:"sortOrder"`
+	Sort      string `form:"sort,omitempty"`
+	SortOrder string `form:"sortOrder,omitempty"`
+
+	// Pagination
+	Page int `form:"page,omitempty"`
+	Size int `form:"size,omitempty"`
 }
 
 var LessFunks = map[string]search.LessFunction[*Message]{
@@ -95,8 +97,8 @@ func Search(chats []*Message, with *SearchOptions) []*Message {
 	results := search.Find(chats, criteria)
 
 	// Sort results if needed
-	if with.SortBy != "" {
-		lessFn := GetLessFunc(with.SortBy, with.SortOrder)
+	if with.Sort != "" {
+		lessFn := GetLessFunc(with.Sort, with.SortOrder)
 		if lessFn != nil {
 			search.SortIndexedItems(results, lessFn)
 		}
@@ -108,19 +110,19 @@ func Search(chats []*Message, with *SearchOptions) []*Message {
 		final[i] = item.Value
 	}
 
-	if with.Limit == 0 { // if not set default is MAX_LIMIT
-		with.Limit = MaxLimit
+	if with.Size == 0 { // if not set default is MAX_LIMIT
+		with.Size = MaxLimit
 	}
 
 	// Apply pagination
-	start := with.Offset
+	start := with.Page
 
 	// Check if the start index is out of bounds. If so, return an empty slice.
 	if start >= len(final) {
 		return []*Message{}
 	}
 
-	end := start + with.Limit
+	end := start + with.Size
 	if end > len(final) {
 		end = len(final)
 	}

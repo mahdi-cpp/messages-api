@@ -13,7 +13,7 @@ func messageRoutes(router *gin.Engine, messageHandler *handlers.MessageHandler) 
 	//router.GET("/api/messages/:messageId/chats/chatId", messageHandler.Read)
 	//router.GET("/api/messages/chats/chatId", messageHandler.ReadAll)
 
-	router.PATCH("/api/messages/:id", messageHandler.Update)
+	router.PATCH("/api/messages", messageHandler.Update)
 	router.PATCH("/api/messages/bulk-update", messageHandler.BuckUpdate)
 
 	router.DELETE("/api/messages/:id", messageHandler.Delete)

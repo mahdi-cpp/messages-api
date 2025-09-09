@@ -77,7 +77,7 @@ func NewApplicationManager() (*Manager, error) {
 	//	fmt.Println("chatId", chat1.ID)
 	//}
 
-	_, err = manager.GetChatManager(config.TestChatID)
+	_, err = manager.GetChatManager(config.ChatID)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -88,8 +88,8 @@ func NewApplicationManager() (*Manager, error) {
 func (m *Manager) GetChatManager(chatID string) (*ChatManager, error) {
 
 	chatManager, ok := m.chatManagers[chatID]
-	if !ok {
-		return nil, fmt.Errorf("chat manager not found for ID: %s", chatID)
+	if ok {
+		return chatManager, nil
 	}
 
 	chat1, err := m.chatsCollection.Get(chatID)
@@ -278,7 +278,7 @@ func (m *Manager) ReadAllChats(chatOptions *chat.SearchOptions) ([]*chat.Chat, e
 	}
 
 	var userChats []*chat.Chat
-	results := search.Find(chats, chat.HasMemberWith(chat.MemberWithUserID(config.Mahdi)))
+	results := search.Find(chats, chat.HasMemberWith(chat.MemberWithUserID(config.UserId)))
 
 	lessFn := chat.GetLessFunc("updatedAt", "start")
 	if lessFn != nil {
@@ -304,8 +304,8 @@ func (m *Manager) ReadUserChats(userID string) ([]*chat.Chat, error) {
 	}
 
 	//searchOptions := &chat.SearchOptions{
-	//	Offset: 0,
-	//	Limit:  10,
+	//	Page: 0,
+	//	Size:  10,
 	//}
 	//filterChats := chat.Search(chatsCollection, searchOptions)
 

@@ -1,4 +1,4 @@
-package chat
+package handlers
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
 	"github.com/mahdi-cpp/messages-api/internal/config"
 )
 
@@ -77,13 +78,13 @@ func makeRequest(t *testing.T, method, endpoint string, queryParams map[string]i
 	return respBody, nil
 }
 
-func createChat(t *testing.T, newChat *Chat) (*Chat, error) {
+func createChat(t *testing.T, newChat *chat.Chat) (*chat.Chat, error) {
 	respBody, err := makeRequest(t, "POST", "messages", nil, newChat)
 	if err != nil {
 		return nil, fmt.Errorf("create request failed: %w", err)
 	}
 
-	var createdChat Chat
+	var createdChat chat.Chat
 	if err := json.Unmarshal(respBody, &createdChat); err != nil {
 		return nil, fmt.Errorf("unmarshaling response: %w", err)
 	}
@@ -94,8 +95,8 @@ func createChat(t *testing.T, newChat *Chat) (*Chat, error) {
 
 func TestCreate(t *testing.T) {
 
-	testChat := &Chat{
-		ID:        config.TestChatID,
+	testChat := &chat.Chat{
+		ID:        config.ChatID,
 		Title:     "Test Chat",
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -115,7 +116,7 @@ func TestCreate(t *testing.T) {
 func TestRead(t *testing.T) {
 
 	queryParams := map[string]interface{}{
-		"userId": config.Mahdi,
+		"userId": config.UserId,
 		"chatId": "018f3a8b-1b32-729a-f7e5-5467c1b2d3e4",
 	}
 
@@ -124,7 +125,7 @@ func TestRead(t *testing.T) {
 		t.Fatalf("Request failed: %v", err)
 	}
 
-	var chat1 Chat
+	var chat1 chat.Chat
 	if err := json.Unmarshal(respBody, &chat1); err != nil {
 		t.Fatalf("Unmarshaling failed: %v", err)
 	}
@@ -136,7 +137,7 @@ func TestRead(t *testing.T) {
 func TestReadAll(t *testing.T) {
 
 	queryParams := map[string]interface{}{
-		//"userId":    config.Mahdi,
+		"userId":    config.UserId,
 		"offset":    2,
 		"limit":     100,
 		"sortBy":    "id",
@@ -148,7 +149,7 @@ func TestReadAll(t *testing.T) {
 		t.Fatalf("Request failed: %v", err)
 	}
 
-	var chats []Chat
+	var chats []chat.Chat
 	if err := json.Unmarshal(respBody, &chats); err != nil {
 		t.Fatalf("Unmarshaling failed: %v", err)
 	}

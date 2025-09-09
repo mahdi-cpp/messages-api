@@ -50,14 +50,14 @@ func (m *ChatManager) CreateMessage(addMessage *message.Message) error {
 	return nil
 }
 
-func (m *ChatManager) ReadMessage(messageId string) ([]*message.Message, error) {
+func (m *ChatManager) ReadMessage(messageId string) (*message.Message, error) {
 
-	all, err := m.messages.GetAll()
+	selectMessage, err := m.messages.Get(messageId)
 	if err != nil {
 		return nil, fmt.Errorf("error get messages")
 	}
 
-	return all, nil
+	return selectMessage, nil
 }
 
 func (m *ChatManager) ReadAllMessages() ([]*message.Message, error) {
@@ -70,12 +70,20 @@ func (m *ChatManager) ReadAllMessages() ([]*message.Message, error) {
 	return all, nil
 }
 
-func (m *ChatManager) UpdateMessage(updateMessage *message.Message) error {
-	_, err := m.messages.Update(updateMessage)
+func (m *ChatManager) UpdateMessage(updateOptions message.UpdateOptions) (*message.Message, error) {
+
+	msg, err := m.messages.Get(updateOptions.MessageID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+
+	message.Update(msg, updateOptions)
+	msg, err = m.messages.Update(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg, nil
 }
 
 func (m *ChatManager) DeleteMessage(messageID string) error {
@@ -85,3 +93,7 @@ func (m *ChatManager) DeleteMessage(messageID string) error {
 	}
 	return nil
 }
+
+//func (m *ChatManager) DeleteAllMessages() error {
+//
+//}

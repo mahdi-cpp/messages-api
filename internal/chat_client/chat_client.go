@@ -58,7 +58,7 @@ func NewChatClient(config1 ClientChatConfig) (*ChatClient, error) {
 		errorChan:   make(chan error, 10),
 		closeChan:   make(chan struct{}),
 		chats:       make(map[string]bool),
-		currentChat: config.TestChatID,
+		currentChat: config.ChatID,
 	}, nil
 }
 
@@ -97,7 +97,7 @@ func (c *ChatClient) Connect() error {
 	go c.handleMessages()
 
 	// Join default chat
-	if err := c.JoinChat(config.TestChatID); err != nil {
+	if err := c.JoinChat(config.ChatID); err != nil {
 		return err
 	}
 
@@ -237,7 +237,7 @@ func (c *ChatClient) LeaveChat(chatID string) error {
 	c.mutex.Lock()
 	delete(c.chats, chatID)
 	if c.currentChat == chatID {
-		c.currentChat = config.TestChatID
+		c.currentChat = config.ChatID
 	}
 	c.mutex.Unlock()
 

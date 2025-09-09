@@ -46,13 +46,13 @@ type SearchOptions struct {
 	CreatedBefore *time.Time `form:"createdBefore,omitempty"`
 	ActiveAfter   *time.Time `form:"activeAfter,omitempty"`
 
-	// Pagination
-	Offset int `form:"offset,omitempty"`
-	Limit  int `form:"limit,omitempty"`
-
 	// Sorting
-	SortBy    string `form:"sortBy,omitempty"`    // "title", "created", "members", "lastActivity"
+	Sort      string `form:"sort,omitempty"`      // "title", "created", "members", "lastActivity"
 	SortOrder string `form:"sortOrder,omitempty"` // "asc" or "desc"
+
+	// Pagination
+	Page int `form:"page,omitempty"`
+	Size int `form:"size,omitempty"`
 }
 
 const MaxLimit = 1000
@@ -126,8 +126,8 @@ func Search(chats []*Chat, with *SearchOptions) []*Chat {
 	results := search.Find(chats, criteria)
 
 	// Sort results if needed
-	if with.SortBy != "" {
-		lessFn := GetLessFunc(with.SortBy, with.SortOrder)
+	if with.Sort != "" {
+		lessFn := GetLessFunc(with.Sort, with.SortOrder)
 		if lessFn != nil {
 			search.SortIndexedItems(results, lessFn)
 		}
@@ -139,19 +139,19 @@ func Search(chats []*Chat, with *SearchOptions) []*Chat {
 		final[i] = item.Value
 	}
 
-	if with.Limit == 0 { // if not set default is MAX_LIMIT
-		with.Limit = MaxLimit
+	if with.Size == 0 { // if not set default is MAX_LIMIT
+		with.Size = MaxLimit
 	}
 
 	// Apply pagination
-	start := with.Offset
+	start := with.Page
 
 	// Check if the start index is out of bounds. If so, return an empty slice.
 	if start >= len(final) {
 		return []*Chat{}
 	}
 
-	end := start + with.Limit
+	end := start + with.Size
 	if end > len(final) {
 		end = len(final)
 	}

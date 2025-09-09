@@ -86,6 +86,6 @@ type Location struct {
 //type PHFetchResult[T any] struct {
 //	Items  []T `json:"items"`
 //	Total  int `json:"total"`
-//	Limit  int `json:"limit"`
-//	Offset int `json:"offset"`
+//	Size  int `json:"limit"`
+//	Page int `json:"offset"`
 //}

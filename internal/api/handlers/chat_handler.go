@@ -112,8 +112,8 @@ func (h *ChatHandler) readAllChats(c *gin.Context, options *chat.SearchOptions) 
 	}
 
 	fmt.Println("title:", options.Title)
-	fmt.Println("offset:", options.Offset)
-	fmt.Println("limit:", options.Limit)
+	fmt.Println("page:", options.Page)
+	fmt.Println("size:", options.Size)
 	if options.IsVerified != nil {
 		fmt.Println("verified:", *options.IsVerified)
 	}

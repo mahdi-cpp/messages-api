@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mahdi-cpp/messages-api/internal/application"
-	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
 	"github.com/mahdi-cpp/messages-api/internal/collections/message"
 	"github.com/mahdi-cpp/messages-api/internal/helpers"
 )
@@ -56,6 +55,57 @@ func (h *MessageHandler) Create(c *gin.Context) {
 //	@Failure		404	{object}	http util.HTTPError
 //	@Failure		500	{object}	http util.HTTPError
 //	@Router			/chats/{id} [get]
+//func (h *MessageHandler) Read(c *gin.Context) {
+//
+//	var request message.SearchOptions
+//	if err := c.ShouldBindQuery(&request); err != nil {
+//		fmt.Println(err)
+//		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+//		return
+//	}
+//
+//	if request.MessageID == "" { //read all message with SearchOptions
+//		selectedMessages, err := h.appManager.ReadAllMessages(&request)
+//		if err != nil {
+//			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+//			return
+//		}
+//
+//		c.JSON(http.StatusOK, selectedMessages)
+//
+//	} else { //read single message
+//
+//		c.JSON(http.StatusNotFound, gin.H{"messageId not found": request.MessageID})
+//	}
+//}
+//
+//func (h *MessageHandler) ReadAll(c *gin.Context) {
+//
+//	fmt.Println("MessageHandler readAll")
+//
+//	var with message.SearchOptions
+//	if err := c.ShouldBindQuery(&with); err != nil {
+//		fmt.Println(err)
+//		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+//		return
+//	}
+//
+//	fmt.Println("with:", with)
+//
+//	fmt.Println("offset:", with.Page)
+//	fmt.Println("limit:", with.Size)
+//
+//	messages, err := h.appManager.ReadAllMessages(&with)
+//	if err != nil {
+//		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+//		return
+//	}
+//
+//	fmt.Println("ReadAllMessages match:", len(messages))
+//
+//	c.JSON(http.StatusOK, messages)
+//}
+
 func (h *MessageHandler) Read(c *gin.Context) {
 
 	var request message.SearchOptions
@@ -65,70 +115,69 @@ func (h *MessageHandler) Read(c *gin.Context) {
 		return
 	}
 
-	if request.MessageID == "" { //read all message with SearchOptions
-		selectedMessages, err := h.appManager.ReadAllMessages(&request)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, selectedMessages)
-
-	} else { //read single message
-
-		c.JSON(http.StatusNotFound, gin.H{"messageId not found": request.MessageID})
+	if request.MessageID == "" { //read all messages with Message SearchOptions
+		h.readAllMessage(c, &request)
+	} else if request.MessageID != "" {
+		h.readSingleMessage(c, request.ChatID, request.MessageID)
 	}
 }
 
-func (h *MessageHandler) ReadAll(c *gin.Context) {
+func (h *MessageHandler) readAllMessage(c *gin.Context, options *message.SearchOptions) {
+	fmt.Println("readAllMessage")
 
-	fmt.Println("MessageHandler readAll")
-
-	var with message.SearchOptions
-	if err := c.ShouldBindQuery(&with); err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	fmt.Println("with:", with)
-
-	fmt.Println("offset:", with.Offset)
-	fmt.Println("limit:", with.Limit)
-
-	messages, err := h.appManager.ReadAllMessages(&with)
+	selectedMessages, err := h.appManager.ReadAllMessages(options)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	fmt.Println("ReadAllMessages match:", len(messages))
+	c.JSON(http.StatusOK, selectedMessages)
+}
 
-	c.JSON(http.StatusOK, messages)
+func (h *MessageHandler) readSingleMessage(c *gin.Context, chatID, messageId string) {
+
+	fmt.Println("readSingleMessage", chatID)
+	chatManager, err := h.appManager.GetChatManager(chatID)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	readMessage, err := chatManager.ReadMessage(messageId)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, readMessage)
 }
 
 func (h *MessageHandler) Update(c *gin.Context) {
 
-	chatID := c.Param("id")
+	fmt.Println("Message Update")
 
-	var request chat.UpdateOptions
+	var request message.UpdateOptions
 	if err := c.ShouldBindJSON(&request); err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body: " + err.Error()})
 		return
 	}
 
-	//for _, member := range request.Members {
-	//	fmt.Println("members:", member.UserID)
-	//}
-
-	err := h.appManager.UpdateChat(chatID, request)
+	chatManager, err := h.appManager.GetChatManager(request.ChatID)
 	if err != nil {
-		c.JSON(http.StatusNotModified, gin.H{"message": "failed update chat"})
+		fmt.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "successfully updated"})
+	messageUpdated, err := chatManager.UpdateMessage(request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": messageUpdated})
 }
 
 func (h *MessageHandler) BuckUpdate(c *gin.Context) {
