@@ -3,14 +3,15 @@ package message
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/mahdi-cpp/iris-tools/update"
 )
 
 type UpdateOptions struct {
-	MessageIDs []string `json:"messageIds,omitempty"`
-	UserID     string   `json:"userId"`
-	ChatID     string   `json:"chatId"`
-	MessageID  string   `json:"messageId"`
+	MessageIDs []uuid.UUID `json:"messageIds,omitempty"`
+	UserID     uuid.UUID   `json:"userId"`
+	ChatID     uuid.UUID   `json:"chatId"`
+	MessageID  uuid.UUID   `json:"messageId"`
 
 	Content     string      `json:"content"`
 	MessageType MessageType `json:"type"` // Changed name to avoid conflict

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/mahdi-cpp/messages-api/internal/application"
 )
 
@@ -28,17 +29,22 @@ func NewWebSocketHandler(appManager *application.Manager) *WebSocketHandler {
 // ServeHTTP handles HTTP requests and upgrades them to WebSocket
 func (h *WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
-	userID := r.URL.Query().Get("user_id")
-	if userID == "" {
+	idString := r.URL.Query().Get("user_id")
+	if idString == "" {
 		http.Error(w, "User ID required", http.StatusUnauthorized)
 		return
 	}
 
-	fmt.Println("user_id:", userID)
+	userID, err := uuid.Parse(idString)
+	if err != nil {
+		return
+	}
+
+	fmt.Println("user_id:", idString)
 
 	username := r.URL.Query().Get("username")
 	if username == "" {
-		username = userID
+		username = idString
 	}
 
 	h.appManager.CreateWebsocketClient(w, r, userID, username)

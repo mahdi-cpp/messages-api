@@ -5,12 +5,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/mahdi-cpp/iris-tools/search"
 )
 
 type SearchOptions struct {
-	ChatID                string          `form:"chatId,omitempty"`
-	MessageID             string          `form:"messageId,omitempty"`
+	ChatID                uuid.UUID       `form:"chatId,omitempty"`
+	MessageID             uuid.UUID       `form:"messageId,omitempty"`
 	Type                  string          `form:"type,omitempty"` // "private", "group", "channel", "supergroup"
 	Title                 string          `form:"title,omitempty"`
 	Username              string          `form:"username,omitempty"` // Unique identifier for public channels/groups
@@ -58,7 +59,7 @@ type SearchOptions struct {
 const MaxLimit = 1000
 
 var LessFunks = map[string]search.LessFunction[*Chat]{
-	"id":        func(a, b *Chat) bool { return a.ID < b.ID },
+	"id":        func(a, b *Chat) bool { return a.ID.String() < b.ID.String() },
 	"createdAt": func(a, b *Chat) bool { return a.CreatedAt.Before(b.CreatedAt) },
 	"updatedAt": func(a, b *Chat) bool { return a.UpdatedAt.Before(b.UpdatedAt) },
 }
@@ -81,7 +82,7 @@ func BuildChatCriteria(with *SearchOptions) search.Criteria[*Chat] {
 	return func(c *Chat) bool {
 
 		// ID filter
-		if with.ChatID != "" && c.ID != with.ChatID {
+		if with.ChatID != uuid.Nil && c.ID != with.ChatID {
 			return false
 		}
 
@@ -178,7 +179,7 @@ func HasMemberWith(memberCriteria search.Criteria[*Member]) search.Criteria[*Cha
 // ---------------------------------------------------------------------
 
 // MemberWithUserID checks if a member has a specific user ID
-func MemberWithUserID(userID string) search.Criteria[*Member] {
+func MemberWithUserID(userID uuid.UUID) search.Criteria[*Member] {
 	return func(member *Member) bool {
 		return member.UserID == userID
 	}

@@ -7,7 +7,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/mahdi-cpp/iris-tools v1.0.6
+	github.com/mahdi-cpp/iris-tools v1.0.7
 )
 
 require (

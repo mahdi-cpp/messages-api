@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -13,20 +14,20 @@ import (
 type Client struct {
 	hub    *Hub
 	conn   *websocket.Conn
-	userID string
+	userID uuid.UUID
 	send   chan []byte
-	chats  map[string]bool // Track which chats the user is in
+	chats  map[uuid.UUID]bool // Track which chats the user is in
 	mutex  sync.RWMutex
 }
 
 // NewClient creates a new chat_client instance
-func NewClient(hub *Hub, conn *websocket.Conn, userID string) *Client {
+func NewClient(hub *Hub, conn *websocket.Conn, userID uuid.UUID) *Client {
 	return &Client{
 		hub:    hub,
 		conn:   conn,
 		userID: userID,
 		send:   make(chan []byte, 256),
-		chats:  make(map[string]bool),
+		chats:  make(map[uuid.UUID]bool),
 	}
 }
 
@@ -37,24 +38,24 @@ func (c *Client) handleMessage(rawMessage []byte) {
 }
 
 // IsInChat checks if the chat_client is in a specific chat
-func (c *Client) IsInChat(chatID string) bool {
+func (c *Client) IsInChat(chatID uuid.UUID) bool {
 	_, ok := c.chats[chatID]
 	return ok
 }
 
 // JoinChat adds the chat_client to a chat
-func (c *Client) JoinChat(chatID string) {
+func (c *Client) JoinChat(chatID uuid.UUID) {
 	c.chats[chatID] = true
 }
 
 // LeaveChat removes the chat_client from a chat
-func (c *Client) LeaveChat(chatID string) {
+func (c *Client) LeaveChat(chatID uuid.UUID) {
 	delete(c.chats, chatID)
 }
 
 // GetChats returns all chats the chat_client is in
-func (c *Client) GetChats() []string {
-	chats := make([]string, 0, len(c.chats))
+func (c *Client) GetChats() []uuid.UUID {
+	chats := make([]uuid.UUID, 0, len(c.chats))
 	for chatID := range c.chats {
 		chats = append(chats, chatID)
 	}
@@ -84,7 +85,7 @@ func (c *Client) Close() {
 }
 
 // UserID returns the chat_client's user ID
-func (c *Client) UserID() string {
+func (c *Client) UserID() uuid.UUID {
 	return c.userID
 }
 

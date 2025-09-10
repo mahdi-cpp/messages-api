@@ -83,7 +83,7 @@ func TestCreate(t *testing.T) {
 	sendMessage := &message.Message{
 		MessageType: "message",
 		Width:       450,
-		UserID:      config.UserId,
+		UserID:      config.Mahdi,
 		ChatID:      config.ChatID,
 		Content:     "Test Message",
 		CreatedAt:   time.Now(),

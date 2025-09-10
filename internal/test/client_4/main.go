@@ -14,13 +14,11 @@ func main() {
 	client1 := chat_client.NewChatClient(chat_client.ClientChatConfig{
 		ServerURL: "ws://localhost:8089/ws",
 		UserID:    "test_user_1",
-		Username:  "TestUser1",
 	})
 
 	client2 := chat_client.NewChatClient(chat_client.ClientChatConfig{
 		ServerURL: "ws://localhost:8089/ws",
 		UserID:    "test_user_2",
-		Username:  "TestUser2",
 	})
 
 	// Connect both clients

@@ -2,14 +2,12 @@ package message
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
-func (a *Message) SetID(id string)          { a.ID = id }
-func (a *Message) SetCreatedAt(t time.Time) { a.CreatedAt = t }
-func (a *Message) SetUpdatedAt(t time.Time) { a.UpdatedAt = t }
-func (a *Message) GetID() string            { return a.ID }
-func (a *Message) GetCreatedAt() time.Time  { return a.CreatedAt }
-func (a *Message) GetUpdatedAt() time.Time  { return a.UpdatedAt }
+func (a *Message) SetID(id uuid.UUID) { a.ID = id }
+func (a *Message) GetID() uuid.UUID   { return a.ID }
 
 type MessageType string
 
@@ -27,9 +25,9 @@ const (
 )
 
 type Message struct {
-	ID          string      `json:"id"`
-	ChatID      string      `json:"chatId"`
-	UserID      string      `json:"userId"`
+	ID          uuid.UUID   `json:"id"`
+	ChatID      uuid.UUID   `json:"chatId"`
+	UserID      uuid.UUID   `json:"userId"`
 	Content     string      `json:"content"`
 	MessageType MessageType `json:"type"` // Changed name to avoid conflict
 

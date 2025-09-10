@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/mahdi-cpp/messages-api/internal/application"
 	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
 	"github.com/mahdi-cpp/messages-api/internal/helpers"
@@ -42,6 +43,7 @@ func (h *ChatHandler) Create(c *gin.Context) {
 
 	newChat, err := h.appManager.ChatCreate(request)
 	if err != nil {
+		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -61,8 +63,12 @@ func (h *ChatHandler) Create(c *gin.Context) {
 func (h *ChatHandler) ReadChat(c *gin.Context) {
 
 	chatID := c.Param("id")
+	parse, err := uuid.Parse(chatID)
+	if err != nil {
+		return
+	}
 
-	chat1, err := h.appManager.ReadChat(chatID)
+	chat1, err := h.appManager.ReadChat(parse)
 	if err != nil {
 		return
 	}
@@ -73,7 +79,7 @@ func (h *ChatHandler) ReadChat(c *gin.Context) {
 }
 
 // Read
-// @Summary Get a list of chats
+// @Summary Read a list of chats
 // @Description Retrieves a list of chats, with optional search, pagination, and filtering.
 // @Tags chat
 // @Accept json
@@ -94,9 +100,9 @@ func (h *ChatHandler) Read(c *gin.Context) {
 		return
 	}
 
-	if request.ChatID == "" { //read all chats with Chat SearchOptions
+	if request.ChatID == uuid.Nil { //read all chats with Chat SearchOptions
 		h.readAllChats(c, &request)
-	} else if request.ChatID != "" {
+	} else if request.ChatID != uuid.Nil {
 		h.readSingleChat(c, request.ChatID)
 	}
 }
@@ -122,7 +128,7 @@ func (h *ChatHandler) readAllChats(c *gin.Context, options *chat.SearchOptions) 
 	c.JSON(http.StatusOK, chats)
 }
 
-func (h *ChatHandler) readSingleChat(c *gin.Context, chatID string) {
+func (h *ChatHandler) readSingleChat(c *gin.Context, chatID uuid.UUID) {
 
 	fmt.Println("readSingleChat", chatID)
 	readChat, err := h.appManager.ReadChat(chatID)
@@ -170,7 +176,11 @@ func (h *ChatHandler) readSingleChat(c *gin.Context, chatID string) {
 // @Router /chats/{id} [put]
 func (h *ChatHandler) Update(c *gin.Context) {
 
-	chatID := c.Param("id")
+	id := c.Param("id")
+	chatId, err := uuid.Parse(id)
+	if err != nil {
+		return
+	}
 
 	var request chat.UpdateOptions
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -183,7 +193,7 @@ func (h *ChatHandler) Update(c *gin.Context) {
 	//	fmt.Println("members:", member.UserID)
 	//}
 
-	err := h.appManager.UpdateChat(chatID, request)
+	err = h.appManager.UpdateChat(chatId, request)
 	if err != nil {
 		c.JSON(http.StatusNotModified, gin.H{"message": "failed update chat"})
 		return
@@ -229,7 +239,7 @@ func (h *ChatHandler) BuckUpdate(c *gin.Context) {
 // @Success 200 {object} object "Chat deleted successfully"
 // @Router /chats/{id} [delete]
 func (h *ChatHandler) Delete(c *gin.Context) {
-	// Get the ID from the URL path
+	// Read the ID from the URL path
 	id := c.Param("id")
 
 	// The 'id' variable will contain "12" from the URL

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
+	"github.com/mahdi-cpp/messages-api/internal/config"
 )
 
 func createChat(newChat chat.Chat) error {
@@ -65,28 +66,28 @@ func main() {
 
 	members := []chat.Member{
 		{
-			UserID:     "20",
+			UserID:     config.Mahdi,
 			Role:       "creator",
 			IsActive:   true,
 			LastActive: time.Now(),
 			JoinedAt:   time.Now().Add(-24 * time.Hour),
 		},
 		{
-			UserID:     "21",
+			UserID:     config.Parsa,
 			Role:       "member",
 			IsActive:   true,
 			LastActive: time.Now(),
 			JoinedAt:   time.Now().Add(-12 * time.Hour),
 		},
 		{
-			UserID:     "22",
+			UserID:     config.Golnar,
 			Role:       "member",
 			IsActive:   true,
 			LastActive: time.Now(),
 			JoinedAt:   time.Now().Add(-12 * time.Hour),
 		},
 		{
-			UserID:     "23",
+			UserID:     config.Behzad,
 			Role:       "admin",
 			IsActive:   false,
 			LastActive: time.Now(),

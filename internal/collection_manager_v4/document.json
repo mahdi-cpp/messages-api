@@ -1,0 +1,185 @@
+{
+  "project_name": "collection_manager_v4",
+  "description": "A robust and flexible Go package for managing collections of items, providing a thread-safe in-memory cache and persistent storage to either a single JSON file or a directory of JSON files. It uses generics and interfaces to work with any type that has an ID.",
+  "components": [
+    {
+      "name": "CollectionItem",
+      "type": "Interface",
+      "description": "Defines the contract for any item that can be managed by the CollectionManager. It requires methods to get and set a unique string ID.",
+      "methods": [
+        {
+          "name": "SetID",
+          "signature": "SetID(string)",
+          "description": "Assigns a unique ID to the item."
+        },
+        {
+          "name": "GetID",
+          "signature": "GetID() string",
+          "description": "Retrieves the unique ID of the item."
+        }
+      ]
+    },
+    {
+      "name": "storage",
+      "type": "Interface",
+      "description": "A private, generic interface for persistent storage. It standardizes the methods for reading, creating, updating, and deleting items, abstracting the storage mechanism.",
+      "methods": [
+        {
+          "name": "ReadAll",
+          "signature": "ReadAll(requireExist bool) ([]T, error)",
+          "description": "Reads all items from the storage. 'requireExist' dictates whether an error is returned if the storage path doesn't exist."
+        },
+        {
+          "name": "CreateItem",
+          "signature": "CreateItem(item T) error",
+          "description": "Persists a new item to storage."
+        },
+        {
+          "name": "UpdateItem",
+          "signature": "UpdateItem(item T) error",
+          "description": "Updates an existing item in storage."
+        },
+        {
+          "name": "DeleteItem",
+          "signature": "DeleteItem(id string) error",
+          "description": "Deletes an item from storage by its ID."
+        }
+      ]
+    },
+    {
+      "name": "singleFileStorage",
+      "type": "Struct",
+      "implements": "storage",
+      "description": "An implementation of the 'storage' interface that stores the entire collection as a single JSON array in one file. It uses a metadata.Control for file operations.",
+      "fields": [
+        {
+          "name": "ctrl",
+          "type": "metadata.Control[[]T]",
+          "description": "Manages file-level read/write operations for the collection."
+        }
+      ]
+    },
+    {
+      "name": "directoryStorage",
+      "type": "Struct",
+      "implements": "storage",
+      "description": "An implementation of the 'storage' interface that stores each item as a separate JSON file within a directory. The file name is the item's ID.",
+      "fields": [
+        {
+          "name": "baseDir",
+          "type": "string",
+          "description": "The base directory path where the item files are stored."
+        }
+      ]
+    },
+    {
+      "name": "Manager",
+      "type": "Struct",
+      "description": "The core component that orchestrates collection management. It combines a storage mechanism with an in-memory thread-safe registry for fast access.",
+      "fields": [
+        {
+          "name": "storage",
+          "type": "storage[T]",
+          "description": "The persistent storage layer (e.g., singleFileStorage or directoryStorage)."
+        },
+        {
+          "name": "items",
+          "type": "registery.Registry[T]",
+          "description": "A thread-safe in-memory cache of the collection items for quick retrieval."
+        }
+      ],
+      "methods": [
+        {
+          "name": "NewCollectionManager",
+          "signature": "NewCollectionManager(path string, requireExist bool) (*Manager[T], error)",
+          "description": "Constructor for the Manager. It determines the appropriate storage type based on the provided path (file or directory) and loads existing data into the in-memory registry."
+        },
+        {
+          "name": "Create",
+          "signature": "Create(newItem T) (T, error)",
+          "description": "Adds a new item to both the persistent storage and the in-memory registry."
+        },
+        {
+          "name": "Read",
+          "signature": "Read(id string) (T, error)",
+          "description": "Retrieves an item from the in-memory registry by its ID."
+        },
+        {
+          "name": "ReadAll",
+          "signature": "ReadAll() ([]T, error)",
+          "description": "Retrieves all items from the in-memory registry."
+        },
+        {
+          "name": "Update",
+          "signature": "Update(updatedItem T) (T, error)",
+          "description": "Updates an item in both the persistent storage and the in-memory registry."
+        },
+        {
+          "name": "Delete",
+          "signature": "Delete(id string) error",
+          "description": "Deletes an item from both the persistent storage and the in-memory registry."
+        }
+      ]
+    },
+    {
+      "name": "Control",
+      "type": "Struct (from metadata package)",
+      "description": "A generic struct for managing a single JSON file. It provides thread-safe methods for reading and writing data, and uses a file locking mechanism via a Mutex.",
+      "fields": [
+        {
+          "name": "filePath",
+          "type": "string",
+          "description": "The path to the JSON file."
+        },
+        {
+          "name": "mutex",
+          "type": "sync.RWMutex",
+          "description": "A read/write mutex to ensure thread-safe file access."
+        }
+      ]
+    },
+    {
+      "name": "Registry",
+      "type": "Struct (from registery package)",
+      "description": "A thread-safe in-memory key-value store. It uses a mutex to protect concurrent access to the underlying map.",
+      "fields": [
+        {
+          "name": "items",
+          "type": "map[string]T",
+          "description": "The map holding the registered items."
+        },
+        {
+          "name": "mu",
+          "type": "sync.RWMutex",
+          "description": "A read/write mutex to ensure thread-safe access to the map."
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "package": "encoding/json",
+      "description": "For marshaling and unmarshaling JSON data."
+    },
+    {
+      "package": "os",
+      "description": "For file and directory operations (read, write, stat, etc.)."
+    },
+    {
+      "package": "path/filepath",
+      "description": "For cross-platform file path manipulation."
+    },
+    {
+      "package": "sync",
+      "description": "For concurrency primitives like RWMutex."
+    },
+    {
+      "package": "github.com/mahdi-cpp/iris-tools/metadata",
+      "description": "Provides a generic, thread-safe file control for JSON data."
+    },
+    {
+      "package": "github.com/mahdi-cpp/iris-tools/registery",
+      "description": "Provides a thread-safe in-memory key-value store."
+    }
+  ]
+}

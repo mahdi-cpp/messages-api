@@ -3,6 +3,7 @@ package chat
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/mahdi-cpp/iris-tools/update"
 )
 
@@ -33,7 +34,7 @@ type UpdateOptions struct {
 }
 
 // Key extractors for nested structs
-func memberKeyExtractor(m Member) string { return m.UserID }
+func memberKeyExtractor(m Member) uuid.UUID { return m.UserID }
 
 // Initialize updater
 var metadataUpdater = update.NewUpdater[Chat, UpdateOptions]()

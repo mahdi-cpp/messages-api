@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/mahdi-cpp/messages-api/internal/application"
 	"github.com/mahdi-cpp/messages-api/internal/collections/message"
 	"github.com/mahdi-cpp/messages-api/internal/helpers"
@@ -115,9 +116,9 @@ func (h *MessageHandler) Read(c *gin.Context) {
 		return
 	}
 
-	if request.MessageID == "" { //read all messages with Message SearchOptions
+	if request.MessageID == uuid.Nil { //read all messages with Message SearchOptions
 		h.readAllMessage(c, &request)
-	} else if request.MessageID != "" {
+	} else if request.MessageID != uuid.Nil {
 		h.readSingleMessage(c, request.ChatID, request.MessageID)
 	}
 }
@@ -134,7 +135,7 @@ func (h *MessageHandler) readAllMessage(c *gin.Context, options *message.SearchO
 	c.JSON(http.StatusOK, selectedMessages)
 }
 
-func (h *MessageHandler) readSingleMessage(c *gin.Context, chatID, messageId string) {
+func (h *MessageHandler) readSingleMessage(c *gin.Context, chatID, messageId uuid.UUID) {
 
 	fmt.Println("readSingleMessage", chatID)
 	chatManager, err := h.appManager.GetChatManager(chatID)
@@ -154,8 +155,6 @@ func (h *MessageHandler) readSingleMessage(c *gin.Context, chatID, messageId str
 }
 
 func (h *MessageHandler) Update(c *gin.Context) {
-
-	fmt.Println("Message Update")
 
 	var request message.UpdateOptions
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -177,7 +176,7 @@ func (h *MessageHandler) Update(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": messageUpdated})
+	c.JSON(http.StatusOK, messageUpdated)
 }
 
 func (h *MessageHandler) BuckUpdate(c *gin.Context) {
@@ -198,7 +197,7 @@ func (h *MessageHandler) BuckUpdate(c *gin.Context) {
 }
 
 func (h *MessageHandler) Delete(c *gin.Context) {
-	// Get the ID from the URL path
+	// Read the ID from the URL path
 	id := c.Param("id")
 
 	// The 'id' variable will contain "12" from the URL

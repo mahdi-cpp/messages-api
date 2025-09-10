@@ -9,15 +9,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/mahdi-cpp/iris-tools/collection_manager_v3"
 	"github.com/mahdi-cpp/iris-tools/image_loader"
 	"github.com/mahdi-cpp/iris-tools/search"
+	"github.com/mahdi-cpp/messages-api/internal/collection_manager_gemini"
 	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
 	"github.com/mahdi-cpp/messages-api/internal/collections/message"
 	"github.com/mahdi-cpp/messages-api/internal/config"
+	"github.com/mahdi-cpp/messages-api/internal/helpers"
 	"github.com/mahdi-cpp/messages-api/internal/hub"
-	"github.com/mahdi-cpp/messages-api/internal/utils"
 )
 
 var upgrader = websocket.Upgrader{
@@ -29,13 +30,13 @@ var upgrader = websocket.Upgrader{
 }
 
 type Manager struct {
-	mu              sync.RWMutex
-	usersStatus     map[string]*UserStatusData //key is userID
-	chatsCollection *collection_manager_v3.Manager[*chat.Chat]
-	chatManagers    map[string]*ChatManager // Maps chatIDs to their ChatManager
-	hub             *hub.Hub
-	iconLoader      *image_loader.ImageLoader
-	ctx             context.Context
+	mu                    sync.RWMutex
+	usersStatus           map[string]*UserStatusData //key is userID
+	chatCollectionManager *collection_manager_gemini.Manager[*chat.Chat]
+	chatManagers          map[uuid.UUID]*ChatManager // Maps chatIDs to their ChatManager
+	hub                   *hub.Hub
+	iconLoader            *image_loader.ImageLoader
+	ctx                   context.Context
 	// Added a channel to receive messages from the Hub for saving to a file.
 	// یک کانال برای دریافت پیام‌ها از Hub جهت ذخیره در فایل اضافه شده است.
 	messagesToSave chan *hub.Message
@@ -50,7 +51,7 @@ func NewApplicationManager() (*Manager, error) {
 	manager := &Manager{
 		ctx:            context.Background(),
 		messagesToSave: make(chan *hub.Message, 1000), // Initialize the channel
-		chatManagers:   make(map[string]*ChatManager),
+		chatManagers:   make(map[uuid.UUID]*ChatManager),
 	}
 
 	// Pass the new channel to the Hub
@@ -58,24 +59,16 @@ func NewApplicationManager() (*Manager, error) {
 	manager.hub = hub.NewHub(manager.messagesToSave)
 	go manager.hub.Run()
 
-	// Start a goroutine to listen for messages and save them to a file.
+	// Start goroutine to listen for messages and save them to chats file.
 	// یک goroutine برای گوش دادن به پیام‌ها و ذخیره آن‌ها در فایل راه‌اندازی می‌کنیم.
 	go manager.saveMessagesToFile()
 
 	var err error
-	manager.chatsCollection, err = collection_manager_v3.NewCollectionManager[*chat.Chat]("/app/iris/com.iris.messages/metadata", true)
+	var chatsDirectory = config.GetPath("chats_test2")
+	manager.chatCollectionManager, err = collection_manager_gemini.NewCollectionManager[*chat.Chat](chatsDirectory)
 	if err != nil {
 		panic(err)
 	}
-
-	//all, err := manager.chatsCollection.GetAll()
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	//for _, chat1 := range all {
-	//	fmt.Println("chatId", chat1.ID)
-	//}
 
 	_, err = manager.GetChatManager(config.ChatID)
 	if err != nil {
@@ -85,14 +78,14 @@ func NewApplicationManager() (*Manager, error) {
 	return manager, nil
 }
 
-func (m *Manager) GetChatManager(chatID string) (*ChatManager, error) {
+func (m *Manager) GetChatManager(chatID uuid.UUID) (*ChatManager, error) {
 
 	chatManager, ok := m.chatManagers[chatID]
 	if ok {
 		return chatManager, nil
 	}
 
-	chat1, err := m.chatsCollection.Get(chatID)
+	chat1, err := m.chatCollectionManager.Read(chatID)
 	if err != nil {
 		fmt.Println("chat not found in cash")
 		return nil, err
@@ -108,7 +101,7 @@ func (m *Manager) GetChatManager(chatID string) (*ChatManager, error) {
 	return chatManager, nil
 }
 
-func (m *Manager) CreateWebsocketClient(w http.ResponseWriter, r *http.Request, userID string, username string) {
+func (m *Manager) CreateWebsocketClient(w http.ResponseWriter, r *http.Request, userID uuid.UUID, username string) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -137,12 +130,17 @@ func (m *Manager) CreateWebsocketClient(w http.ResponseWriter, r *http.Request, 
 		log.Printf("Failed to send welcome message to user %s: %v", userID, err)
 	}
 
+	chatId, err := uuid.NewV7()
+	if err != nil {
+		return
+	}
+
 	// Notify all users in default chat about new user
-	m.notifyUserJoined(userID, username, "general")
+	m.notifyUserJoined(userID, chatId, username)
 }
 
 // notifyUserJoined sends a notification when a user joins a chat
-func (m *Manager) notifyUserJoined(userID, username, chatID string) {
+func (m *Manager) notifyUserJoined(userID, chatID uuid.UUID, username string) {
 
 	joinMessage := map[string]interface{}{
 		"type":      "user_joined",
@@ -157,40 +155,41 @@ func (m *Manager) notifyUserJoined(userID, username, chatID string) {
 	m.hub.BroadcastToChat(chatID, joinMessage)
 }
 
-func (m *Manager) ChatCreate(newChat *chat.Chat) (*chat.Chat, error) {
+func (m *Manager) ChatCreate(requestChat *chat.Chat) (*chat.Chat, error) {
 
-	chatID, err := utils.GenerateUUID()
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	newChat.ID = chatID
-
-	_, err = m.chatsCollection.Create(newChat)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-
-	return newChat, nil
-	//chatManager, err := NewChatManager(create)
+	//err := requestChat.Validate()
 	//if err != nil {
-	//	panic(err)
+	//	return nil, err
 	//}
+
+	// Step 2: Generate a unique ID for the new chat
+	chatID, err := helpers.GenerateUUID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate chat ID: %w", err)
+	}
+	requestChat.ID = chatID
+
+	// Step 3: Create the chat in the database
+	_, err = m.chatCollectionManager.Create(requestChat)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create chat in database: %w", err)
+	}
+
+	return requestChat, nil
 }
 
-func (m *Manager) UpdateChat(chatID string, updateOptions chat.UpdateOptions) error {
+func (m *Manager) UpdateChat(chatID uuid.UUID, updateOptions chat.UpdateOptions) error {
 
 	fmt.Println(chatID)
 
-	chat1, err := m.chatsCollection.Get(chatID)
+	chat1, err := m.chatCollectionManager.Read(chatID)
 	if err != nil {
 		return err
 	}
 
 	chat.Update(chat1, updateOptions)
 
-	_, err = m.chatsCollection.Update(chat1)
+	_, err = m.chatCollectionManager.Update(chat1)
 	if err != nil {
 		return err
 	}
@@ -206,7 +205,7 @@ func (m *Manager) MessageCreate(newMessage *message.Message) (*message.Message, 
 		return nil, errors.New("chat not found")
 	}
 
-	id, err := utils.GenerateUUID()
+	id, err := helpers.GenerateUUID()
 	if err != nil {
 		fmt.Printf("Failed to generate uuid: %v", err)
 		return nil, err
@@ -232,7 +231,7 @@ func (m *Manager) saveMessagesToFile() {
 			return
 		}
 
-		id, err := utils.GenerateUUID()
+		id, err := helpers.GenerateUUID()
 		if err != nil {
 			fmt.Printf("Failed to generate uuid: %v", err)
 			return
@@ -260,9 +259,9 @@ func (m *Manager) saveMessagesToFile() {
 	}
 }
 
-func (m *Manager) ReadChat(chatID string) (*chat.Chat, error) {
+func (m *Manager) ReadChat(chatID uuid.UUID) (*chat.Chat, error) {
 
-	chat1, err := m.chatsCollection.Get(chatID)
+	chat1, err := m.chatCollectionManager.Read(chatID)
 	if err != nil {
 		return nil, err
 	}
@@ -272,13 +271,13 @@ func (m *Manager) ReadChat(chatID string) (*chat.Chat, error) {
 
 func (m *Manager) ReadAllChats(chatOptions *chat.SearchOptions) ([]*chat.Chat, error) {
 
-	chats, err := m.chatsCollection.GetAll()
+	chats, err := m.chatCollectionManager.ReadAll()
 	if err != nil {
 		return nil, err
 	}
 
 	var userChats []*chat.Chat
-	results := search.Find(chats, chat.HasMemberWith(chat.MemberWithUserID(config.UserId)))
+	results := search.Find(chats, chat.HasMemberWith(chat.MemberWithUserID(config.Mahdi)))
 
 	lessFn := chat.GetLessFunc("updatedAt", "start")
 	if lessFn != nil {
@@ -296,9 +295,9 @@ func (m *Manager) ReadAllChats(chatOptions *chat.SearchOptions) ([]*chat.Chat, e
 	return filterChats, nil
 }
 
-func (m *Manager) ReadUserChats(userID string) ([]*chat.Chat, error) {
+func (m *Manager) ReadUserChats(userID uuid.UUID) ([]*chat.Chat, error) {
 
-	chats, err := m.chatsCollection.GetAll()
+	chats, err := m.chatCollectionManager.ReadAll()
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +306,7 @@ func (m *Manager) ReadUserChats(userID string) ([]*chat.Chat, error) {
 	//	Page: 0,
 	//	Size:  10,
 	//}
-	//filterChats := chat.Search(chatsCollection, searchOptions)
+	//filterChats := chat.Search(chatCollectionManager, searchOptions)
 
 	var filterChats []*chat.Chat
 	results := search.Find(chats, chat.HasMemberWith(chat.MemberWithUserID(userID)))

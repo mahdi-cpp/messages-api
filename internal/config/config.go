@@ -2,18 +2,68 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"path/filepath"
+
+	"github.com/google/uuid"
 )
 
-const rootDir = "/media/mahdi/Cloud/Happle"
-const applicationDir = "com.helium.message"
+const rootDir = "/app/iris/"
+const applicationDir = "com.iris.messages"
 const usersDir = "users"
 
-const UserId = "018f3a8b-1b32-7290-b1d5-92716a445330"
-const ChatID = "018f3a8b-1b32-7295-a2c7-87654b4d4567"
-const MessageID = "01991bc4-faad-7b70-aedc-f20ea4146898"
+var (
+	Mahdi  uuid.UUID
+	Parsa  uuid.UUID
+	Behzad uuid.UUID
+	Golnar uuid.UUID
+)
+var (
+	ChatID    uuid.UUID
+	MessageID uuid.UUID
+)
 
-const Parsa = "018f3a8b-1b32-7291-a1c8-29817a544561"
+func initUsers() {
+	var err error
+
+	Mahdi, err = uuid.Parse("018f3a8b-1b32-7290-b1d5-92716a445330")
+	if err != nil {
+		log.Fatalf("failed to parse Mahdi: %v", err)
+	}
+
+	Parsa, err = uuid.Parse("018f3a8b-1b32-7291-a1c8-29817a544561")
+	if err != nil {
+		log.Fatalf("failed to parse Mahdi: %v", err)
+	}
+
+	Behzad, err = uuid.Parse("018f3a8b-1b32-729c-a1b2-9876a5b4c3d2")
+	if err != nil {
+		log.Fatalf("failed to parse Mahdi: %v", err)
+	}
+
+	Golnar, err = uuid.Parse("018f3a8b-1b32-729f-d4e5-918273645a2c")
+	if err != nil {
+		log.Fatalf("failed to parse Mahdi: %v", err)
+	}
+
+}
+
+// The Init function is called before main() and is ideal for initialization
+func Init() {
+	var err error
+
+	initUsers()
+
+	ChatID, err = uuid.Parse("018f3a8b-1b32-7295-a2c7-87654b4d4567")
+	if err != nil {
+		log.Fatalf("failed to parse ChatID: %v", err)
+	}
+
+	MessageID, err = uuid.Parse("01991bc4-faad-7b70-aedc-f20ea4146898")
+	if err != nil {
+		log.Fatalf("failed to parse MessageID: %v", err)
+	}
+}
 
 func GetPath(file string) string {
 	return filepath.Join(rootDir, applicationDir, file)

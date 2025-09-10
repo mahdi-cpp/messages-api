@@ -2,73 +2,18 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/mahdi-cpp/messages-api/internal/collections/message"
 	"github.com/mahdi-cpp/messages-api/internal/config"
+	"github.com/mahdi-cpp/messages-api/internal/helpers"
 )
 
-//func makeMessageRequest(t *testing.T, method, endpoint string, queryParams map[string]interface{}, body interface{}) ([]byte, error) {
-//
-//	// Build URL with query parameters
-//	u, err := url.Parse(baseURL + endpoint)
-//	if err != nil {
-//		return nil, fmt.Errorf("parsing URL: %w", err)
-//	}
-//
-//	if queryParams != nil {
-//		q := u.Query()
-//		for key, value := range queryParams {
-//			q.Add(key, fmt.Sprintf("%v", value))
-//		}
-//		u.RawQuery = q.Encode()
-//	}
-//
-//	// Marshal body if provided
-//	var bodyReader io.Reader
-//	if body != nil {
-//		jsonData, err := json.Marshal(body)
-//		if err != nil {
-//			return nil, fmt.Errorf("marshaling body: %w", err)
-//		}
-//		bodyReader = bytes.NewReader(jsonData)
-//	}
-//
-//	// Create request
-//	req, err := http.NewRequest(method, u.String(), bodyReader)
-//	if err != nil {
-//		return nil, fmt.Errorf("creating request: %w", err)
-//	}
-//	if body != nil {
-//		req.Header.Set("Content-Type", "application/json")
-//	}
-//
-//	// Execute request
-//	client := &http.Client{}
-//	resp, err := client.Do(req)
-//	if err != nil {
-//		return nil, fmt.Errorf("executing request: %w", err)
-//	}
-//	defer resp.Body.Close()
-//
-//	// Check status code
-//	if resp.StatusCode >= 400 {
-//		return nil, fmt.Errorf("status %d: %s", resp.StatusCode, resp.Status)
-//	}
-//
-//	// ReadChat response
-//	respBody, err := io.ReadAll(resp.Body)
-//	if err != nil {
-//		return nil, fmt.Errorf("reading response: %w", err)
-//	}
-//
-//	return respBody, nil
-//}
-
 func TestMessageCreate(t *testing.T) {
+
+	var currentURL = baseURL + "messages"
 
 	testMessage := &message.Message{
 		MessageType: "message",
@@ -81,7 +26,7 @@ func TestMessageCreate(t *testing.T) {
 		Version:     "1",
 	}
 
-	respBody, err := makeRequest(t, "POST", "messages", nil, testMessage)
+	respBody, err := helpers.MakeRequest(t, "POST", currentURL, nil, testMessage)
 	if err != nil {
 		t.Errorf("create request failed: %v", err)
 	}
@@ -99,12 +44,14 @@ func TestMessageCreate(t *testing.T) {
 
 func TestMessageRead(t *testing.T) {
 
+	var currentURL = baseURL + "messages"
+
 	queryParams := map[string]interface{}{
 		"userId":    config.UserId,
 		"chatId":    config.ChatID,
 		"messageId": config.MessageID,
 	}
-	respBody, err := makeRequest(t, "GET", "messages", queryParams, nil)
+	respBody, err := helpers.MakeRequest(t, "GET", currentURL, queryParams, nil)
 	if err != nil {
 		t.Fatalf("Request failed: %v", err)
 	}
@@ -119,6 +66,8 @@ func TestMessageRead(t *testing.T) {
 
 func TestMessageReadAll(t *testing.T) {
 
+	var currentURL = baseURL + "messages"
+
 	queryParams := map[string]interface{}{
 		"userId":    config.UserId,
 		"chatId":    config.ChatID,
@@ -128,7 +77,7 @@ func TestMessageReadAll(t *testing.T) {
 		"sortOrder": "start",
 	}
 
-	respBody, err := makeRequest(t, "GET", "messages", queryParams, nil)
+	respBody, err := helpers.MakeRequest(t, "GET", currentURL, queryParams, nil)
 	if err != nil {
 		t.Fatalf("Request failed: %v", err)
 	}
@@ -145,7 +94,8 @@ func TestMessageUpdate(t *testing.T) {
 
 	start := time.Now()
 
-	var text = "Ali Message 1009"
+	var currentURL = baseURL + "messages"
+	var text = "Golnar Message 1010"
 
 	testMessage := &message.UpdateOptions{
 		MessageType: "message",
@@ -155,7 +105,7 @@ func TestMessageUpdate(t *testing.T) {
 		Content:     text,
 	}
 
-	respBody, err := makeRequest(t, "PATCH", "messages", nil, testMessage)
+	respBody, err := helpers.MakeRequest(t, "PATCH", currentURL, nil, testMessage)
 	if err != nil {
 		t.Errorf("create request failed: %v", err)
 	}
@@ -165,11 +115,9 @@ func TestMessageUpdate(t *testing.T) {
 		t.Errorf("unmarshaling response: %v", err)
 	}
 
-	fmt.Println("message Content: ", updatedMessage.Content)
-
-	//if diff := cmp.Diff(updatedMessage.Content, text); diff != "" {
-	//	t.Errorf("Content mismatch (-want +got):\n%s", diff)
-	//}
+	if diff := cmp.Diff(updatedMessage.Content, text); diff != "" {
+		t.Errorf("Content mismatch (-want +got):\n%s", diff)
+	}
 
 	duration := time.Since(start)
 	t.Logf("TestMessageUpdate took: %v", duration)

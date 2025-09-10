@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
+	"github.com/mahdi-cpp/messages-api/internal/config"
 )
 
 // buildQueryParams uses reflection to convert a struct into url.Values.
@@ -142,14 +143,14 @@ func main() {
 	//ignore this field as it is a complex data structure.
 	members := &[]chat.Member{
 		{
-			UserID:     "user123",
+			UserID:     config.Mahdi,
 			Role:       "creator",
 			IsActive:   true,
 			LastActive: time.Now(),
 			JoinedAt:   time.Now().Add(-24 * time.Hour),
 		},
 		{
-			UserID:     "user456",
+			UserID:     config.Golnar,
 			Role:       "member",
 			IsActive:   true,
 			LastActive: time.Now(),
@@ -161,9 +162,9 @@ func main() {
 		Title:      "group",
 		IsVerified: &isVerified,
 		Members:    members,
-		Offset:     10,
-		Limit:      50,
-		SortBy:     "title",
+		Page:       10,
+		Size:       50,
+		Sort:       "title",
 		SortOrder:  "asc",
 	}
 

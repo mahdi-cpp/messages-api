@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/mahdi-cpp/messages-api/internal/collections/message"
 	"github.com/mahdi-cpp/messages-api/internal/config"
@@ -20,12 +21,12 @@ import (
 type ChatClient struct {
 	conn         *websocket.Conn
 	serverURL    string
-	userID       string
+	userID       uuid.UUID
 	messageChan  chan message.Message
 	errorChan    chan error
 	closeChan    chan struct{}
-	chats        map[string]bool
-	currentChat  string
+	chats        map[uuid.UUID]bool
+	currentChat  uuid.UUID
 	isConnected  bool
 	mutex        sync.RWMutex
 	messageCount int
@@ -34,18 +35,18 @@ type ChatClient struct {
 // ClientChatConfig holds chat_client configuration
 type ClientChatConfig struct {
 	ServerURL string
-	UserID    string
+	UserID    uuid.UUID
 	Timeout   time.Duration
 }
 
 // NewChatClient creates a new chat chat_client instance
 func NewChatClient(config1 ClientChatConfig) (*ChatClient, error) {
 
-	if config1.UserID == "" {
+	if config1.UserID == uuid.Nil {
 		return nil, errors.New("user id is required")
 	}
-	//if config1.UserID == "" {
-	//	return nil, errors.New("UserID is required")
+	//if config1.Mahdi == "" {
+	//	return nil, errors.New("Mahdi is required")
 	//}
 	if config1.Timeout == 0 {
 		config1.Timeout = 30 * time.Second
@@ -57,7 +58,7 @@ func NewChatClient(config1 ClientChatConfig) (*ChatClient, error) {
 		messageChan: make(chan message.Message, 100),
 		errorChan:   make(chan error, 10),
 		closeChan:   make(chan struct{}),
-		chats:       make(map[string]bool),
+		chats:       make(map[uuid.UUID]bool),
 		currentChat: config.ChatID,
 	}, nil
 }
@@ -73,7 +74,7 @@ func (c *ChatClient) Connect() error {
 
 	// Add query parameters
 	q := u.Query()
-	q.Add("user_id", c.userID)
+	q.Add("user_id", c.userID.String())
 	u.RawQuery = q.Encode()
 
 	// Establish WebSocket connection
@@ -194,7 +195,7 @@ func (c *ChatClient) SendMessage(content string) error {
 }
 
 // JoinChat joins a specific chat
-func (c *ChatClient) JoinChat(chatID string) error {
+func (c *ChatClient) JoinChat(chatID uuid.UUID) error {
 	if !c.isConnected {
 		return errors.New("not connected to server")
 	}
@@ -219,7 +220,7 @@ func (c *ChatClient) JoinChat(chatID string) error {
 }
 
 // LeaveChat leaves a specific chat
-func (c *ChatClient) LeaveChat(chatID string) error {
+func (c *ChatClient) LeaveChat(chatID uuid.UUID) error {
 	if !c.isConnected {
 		return errors.New("not connected to server")
 	}
@@ -251,7 +252,12 @@ func (c *ChatClient) CreateChat(chatName string) error {
 		return errors.New("not connected to server")
 	}
 
-	chatID := generateChatID(chatName)
+	//chatID := generateChatID(chatName)
+
+	chatID, err := uuid.NewV7()
+	if err != nil {
+		return err
+	}
 
 	message1 := message.Message{
 		MessageType: "create_chat",
@@ -263,7 +269,7 @@ func (c *ChatClient) CreateChat(chatName string) error {
 	return c.sendJSON(message1)
 }
 
-func (c *ChatClient) OpenChat(chatID string) error {
+func (c *ChatClient) OpenChat(chatID uuid.UUID) error {
 
 	if !c.isConnected {
 		return errors.New("not connected to server")
@@ -354,18 +360,18 @@ func (c *ChatClient) IsConnected() bool {
 }
 
 // GetCurrentChat returns the current chat ID
-func (c *ChatClient) GetCurrentChat() string {
+func (c *ChatClient) GetCurrentChat() uuid.UUID {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 	return c.currentChat
 }
 
 // GetChats returns the list of chats the chat_client is in
-func (c *ChatClient) GetChats() []string {
+func (c *ChatClient) GetChats() []uuid.UUID {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
-	chats := make([]string, 0, len(c.chats))
+	chats := make([]uuid.UUID, 0, len(c.chats))
 	for chat := range c.chats {
 		chats = append(chats, chat)
 	}
@@ -391,7 +397,7 @@ func (c *ChatClient) WaitForInterrupt() {
 }
 
 // generateChatID creates a URL-friendly chat ID from a name
-func generateChatID(name string) string {
-	// Simple implementation - in production, use a proper slug generator
-	return url.QueryEscape(name)
-}
+//func generateChatID(name string) string {
+//	// Simple implementation - in production, use a proper slug generator
+//	return url.QueryEscape(name)
+//}

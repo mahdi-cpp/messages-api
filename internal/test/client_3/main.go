@@ -16,7 +16,7 @@ func main() {
 
 	clientConfig := chat_client.ClientChatConfig{
 		ServerURL: "ws://localhost:50151/ws",
-		UserID:    config.UserId,
+		UserID:    config.Mahdi,
 		Timeout:   30 * time.Second,
 	}
 

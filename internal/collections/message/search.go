@@ -3,6 +3,7 @@ package message
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/mahdi-cpp/iris-tools/search"
 )
 
@@ -11,14 +12,14 @@ const MaxLimit = 1000
 // Steps: Filters->Sorting->Pagination
 
 type SearchOptions struct {
-	MessageID string `form:"messageId"`
-	ChatID    string `form:"chatId"`
-	UserID    string `form:"userId"`
-	Content   string `form:"content"`
-	Type      string `form:"type"`
-	IsEdited  *bool  `form:"isEdited"`
-	IsPinned  *bool  `form:"isPinned"`
-	IsDeleted *bool  `form:"isDeleted"`
+	UserID    uuid.UUID `form:"userId"`
+	ChatID    uuid.UUID `form:"chatId"`
+	MessageID uuid.UUID `form:"messageId"`
+	Content   string    `form:"content"`
+	Type      string    `form:"type"`
+	IsEdited  *bool     `form:"isEdited"`
+	IsPinned  *bool     `form:"isPinned"`
+	IsDeleted *bool     `form:"isDeleted"`
 
 	// Date filters
 	CreatedAfter  *time.Time `form:"createdAfter"`
@@ -35,7 +36,7 @@ type SearchOptions struct {
 }
 
 var LessFunks = map[string]search.LessFunction[*Message]{
-	"id":        func(a, b *Message) bool { return a.ID < b.ID },
+	"id":        func(a, b *Message) bool { return a.ID.String() < b.ID.String() },
 	"createdAt": func(a, b *Message) bool { return a.CreatedAt.Before(b.CreatedAt) },
 	"updatedAt": func(a, b *Message) bool { return a.UpdatedAt.Before(b.UpdatedAt) },
 }
@@ -58,7 +59,7 @@ func BuildMessageCriteria(with *SearchOptions) search.Criteria[*Message] {
 	return func(c *Message) bool {
 
 		// ID filter
-		if with.MessageID != "" && c.ID != with.MessageID {
+		if with.MessageID != uuid.Nil && c.ID != with.MessageID {
 			return false
 		}
 		if with.Content != "" && c.Content != with.Content {

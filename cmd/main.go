@@ -20,6 +20,9 @@ import (
 var port = 50151
 
 func main() {
+
+	config.Init()
+
 	// 1. Create a single router instance for the entire application.
 	router := gin.Default()
 
@@ -28,7 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	chats, err := appManager.ReadUserChats(config.UserId)
+	chats, err := appManager.ReadUserChats(config.Mahdi)
 	if err != nil {
 		log.Printf("Error getting chats: %v", err)
 		// The server will still start, but log the error.

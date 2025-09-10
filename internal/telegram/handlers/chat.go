@@ -10,7 +10,7 @@ import (
 )
 
 // GetChats godoc
-// @Summary Get a list of chats by ID
+// @Summary Read a list of chats by ID
 // @Description Retrieves a list of chat objects based on their IDs.
 // @Accept  json
 // @Produce  json

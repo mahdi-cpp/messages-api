@@ -2,17 +2,15 @@ package chat
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
-func (a *Chat) SetID(id string)          { a.ID = id }
-func (a *Chat) SetCreatedAt(t time.Time) { a.CreatedAt = t }
-func (a *Chat) SetUpdatedAt(t time.Time) { a.UpdatedAt = t }
-func (a *Chat) GetID() string            { return a.ID }
-func (a *Chat) GetCreatedAt() time.Time  { return a.CreatedAt }
-func (a *Chat) GetUpdatedAt() time.Time  { return a.UpdatedAt }
+func (c *Chat) SetID(id uuid.UUID) { c.ID = id }
+func (c *Chat) GetID() uuid.UUID   { return c.ID }
 
 type Chat struct {
-	ID                    string          `json:"id"`
+	ID                    uuid.UUID       `json:"id"`
 	Type                  string          `json:"type"`
 	Title                 string          `json:"title"`
 	Username              string          `json:"username,omitempty"`
@@ -49,7 +47,7 @@ type Chat struct {
 }
 
 type Member struct {
-	UserID      string    `json:"userId"`
+	UserID      uuid.UUID `json:"userId"`
 	Role        string    `json:"role"`        // "member", "admin", "creator"
 	CustomTitle string    `json:"customTitle"` // For custom admin titles
 	IsActive    bool      `json:"isActive"`

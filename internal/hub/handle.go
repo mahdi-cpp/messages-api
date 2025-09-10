@@ -6,16 +6,17 @@ import (
 	"log"
 	"time"
 
-	"github.com/mahdi-cpp/messages-api/internal/utils"
+	"github.com/google/uuid"
+	"github.com/mahdi-cpp/messages-api/internal/helpers"
 )
 
 // HandleClientMessage processes a message from a chat_client
 func (h *Hub) HandleClientMessage(client *Client, rawMessage []byte) {
 
 	var message struct {
-		Type    string `json:"type"`
-		Content string `json:"content"`
-		ChatID  string `json:"chatId"`
+		ChatID  uuid.UUID `json:"chatId"`
+		Type    string    `json:"type"`
+		Content string    `json:"content"`
 	}
 
 	if err := json.Unmarshal(rawMessage, &message); err != nil {
@@ -38,7 +39,7 @@ func (h *Hub) HandleClientMessage(client *Client, rawMessage []byte) {
 	case "create_chat":
 		h.HandleCreateChat(client, message.Content)
 	case "open_chat":
-		h.HandleOpenChat(client, message.Content)
+		h.HandleOpenChat(client, message.ChatID)
 	case "get_chats":
 		h.HandleGetChats(client)
 	default:
@@ -46,7 +47,7 @@ func (h *Hub) HandleClientMessage(client *Client, rawMessage []byte) {
 	}
 }
 
-func (h *Hub) handleForSave(userID, chatID, content string) {
+func (h *Hub) handleForSave(userID, chatID uuid.UUID, content string) {
 
 	msg := &Message{
 		UserID:  userID,
@@ -87,7 +88,7 @@ func (h *Hub) handleForSave(userID, chatID, content string) {
 //}
 
 // HandleTypingIndicator broadcasts typing status
-func (h *Hub) HandleTypingIndicator(client *Client, typing, chatID string) {
+func (h *Hub) HandleTypingIndicator(client *Client, typing string, chatID uuid.UUID) {
 	typingMessage := map[string]interface{}{
 		"type":      "typing",
 		"userId":    client.userID,
@@ -99,7 +100,7 @@ func (h *Hub) HandleTypingIndicator(client *Client, typing, chatID string) {
 	h.BroadcastToChat(chatID, typingMessage)
 }
 
-func (h *Hub) HandleSeenIndicator(client *Client, typing, chatID string) {
+func (h *Hub) HandleSeenIndicator(client *Client, typing string, chatID uuid.UUID) {
 	typingMessage := map[string]interface{}{
 		"type":      "seen",
 		"userId":    client.userID,
@@ -111,7 +112,7 @@ func (h *Hub) HandleSeenIndicator(client *Client, typing, chatID string) {
 }
 
 // HandleJoinChat handles chat joining
-func (h *Hub) HandleJoinChat(client *Client, chatID string) {
+func (h *Hub) HandleJoinChat(client *Client, chatID uuid.UUID) {
 
 	h.JoinChat(chatID, client.userID, client)
 
@@ -119,7 +120,7 @@ func (h *Hub) HandleJoinChat(client *Client, chatID string) {
 	joinMessage := map[string]interface{}{
 		"type":      "user_joined",
 		"userId":    client.userID,
-		"message":   client.userID + " joined the chat",
+		"message":   client.userID.String() + " joined the chat",
 		"chatId":    chatID,
 		"timestamp": time.Now(),
 	}
@@ -128,13 +129,13 @@ func (h *Hub) HandleJoinChat(client *Client, chatID string) {
 }
 
 // HandleLeaveChat handles chat leaving
-func (h *Hub) HandleLeaveChat(client *Client, chatID string) {
+func (h *Hub) HandleLeaveChat(client *Client, chatID uuid.UUID) {
 	h.LeaveChat(chatID, client.userID)
 
 	leaveMessage := map[string]interface{}{
 		"type":      "user_left",
 		"userId":    client.userID,
-		"message":   client.userID + " left the chat",
+		"message":   client.userID.String() + " left the chat",
 		"chatId":    chatID,
 		"timestamp": time.Now(),
 	}
@@ -145,7 +146,7 @@ func (h *Hub) HandleLeaveChat(client *Client, chatID string) {
 // HandleCreateChat handles chat creation
 func (h *Hub) HandleCreateChat(client *Client, chatName string) {
 
-	chatID, err := utils.GenerateUUID()
+	chatID, err := helpers.GenerateUUID()
 	if err != nil {
 		fmt.Printf("Error generating chat id: %v", err)
 		return
@@ -166,7 +167,7 @@ func (h *Hub) HandleCreateChat(client *Client, chatName string) {
 	h.BroadcastToAll(chatMessage)
 }
 
-func (h *Hub) HandleOpenChat(client *Client, chatID string) {
+func (h *Hub) HandleOpenChat(client *Client, chatID uuid.UUID) {
 
 	h.JoinChat(chatID, client.userID, client)
 

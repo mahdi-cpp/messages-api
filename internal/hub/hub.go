@@ -6,29 +6,30 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/mahdi-cpp/messages-api/internal/config"
 )
 
 // Chat represents a chat
 type Chat struct {
-	ID        string
+	ID        uuid.UUID
 	Name      string
-	Clients   map[string]*Client // userID -> Client
+	Clients   map[uuid.UUID]*Client // userID -> Client
 	CreatedAt time.Time
 }
 
 // Message represents the data structure of a chat message.
 // پیام، ساختار داده‌ای یک پیام چت را نشان می‌دهد.
 type Message struct {
-	ChatID  string `json:"chatID"`
-	UserID  string `json:"userID"`
-	Content string `json:"content"`
+	ChatID  uuid.UUID `json:"chatID"`
+	UserID  uuid.UUID `json:"userID"`
+	Content string    `json:"content"`
 }
 
 // Hub manages all connected clients and chats
 type Hub struct {
-	chats     map[string]*Chat
-	clients   map[string]*Client // userID -> Client
+	chats     map[uuid.UUID]*Chat
+	clients   map[uuid.UUID]*Client // userID -> Client
 	mutex     sync.RWMutex
 	startTime time.Time
 	// Added a channel to send messages to the Manager.
@@ -40,8 +41,8 @@ type Hub struct {
 func NewHub(messages chan *Message) *Hub {
 
 	hub := &Hub{
-		chats:             make(map[string]*Chat),
-		clients:           make(map[string]*Client),
+		chats:             make(map[uuid.UUID]*Chat),
+		clients:           make(map[uuid.UUID]*Client),
 		startTime:         time.Now(),
 		messagesToManager: messages,
 	}
@@ -93,7 +94,7 @@ func (h *Hub) UnregisterClient(client *Client) {
 }
 
 // LeaveChat removes a chat_client from a specific chat
-func (h *Hub) LeaveChat(chatID, userID string) {
+func (h *Hub) LeaveChat(chatID, userID uuid.UUID) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
@@ -115,7 +116,7 @@ func (h *Hub) LeaveChat(chatID, userID string) {
 }
 
 // JoinChat adds a chat_client to a chat
-func (h *Hub) JoinChat(chatID, userID string, client *Client) {
+func (h *Hub) JoinChat(chatID, userID uuid.UUID, client *Client) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
@@ -124,8 +125,8 @@ func (h *Hub) JoinChat(chatID, userID string, client *Client) {
 		log.Printf("Chat %s does not exist, creating it", chatID)
 		h.chats[chatID] = &Chat{
 			ID:        chatID,
-			Name:      chatID, // Use ID as name for auto-created chats
-			Clients:   make(map[string]*Client),
+			Name:      chatID.String(), // Use ID as name for auto-created chats
+			Clients:   make(map[uuid.UUID]*Client),
 			CreatedAt: time.Now(),
 		}
 	}
@@ -140,7 +141,7 @@ func (h *Hub) JoinChat(chatID, userID string, client *Client) {
 }
 
 // CreateChat creates a new chat
-func (h *Hub) CreateChat(chatID, chatName string) {
+func (h *Hub) CreateChat(chatID uuid.UUID, chatName string) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
@@ -148,7 +149,7 @@ func (h *Hub) CreateChat(chatID, chatName string) {
 		h.chats[chatID] = &Chat{
 			ID:        chatID,
 			Name:      chatName,
-			Clients:   make(map[string]*Client),
+			Clients:   make(map[uuid.UUID]*Client),
 			CreatedAt: time.Now(),
 		}
 		log.Printf("Chat created: %s (%s). Total chats: %d", chatName, chatID, len(h.chats))
@@ -156,7 +157,7 @@ func (h *Hub) CreateChat(chatID, chatName string) {
 }
 
 // BroadcastToChat sends a message to all clients in a chat
-func (h *Hub) BroadcastToChat(chatID string, message interface{}) {
+func (h *Hub) BroadcastToChat(chatID uuid.UUID, message interface{}) {
 
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
@@ -186,11 +187,11 @@ func (h *Hub) BroadcastToChat(chatID string, message interface{}) {
 }
 
 // GetChatList returns a map of chat IDs to chat names
-func (h *Hub) GetChatList() map[string]string {
+func (h *Hub) GetChatList() map[uuid.UUID]string {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
-	chatList := make(map[string]string)
+	chatList := make(map[uuid.UUID]string)
 	for id, chat := range h.chats {
 		chatList[id] = chat.Name
 	}
@@ -198,18 +199,18 @@ func (h *Hub) GetChatList() map[string]string {
 }
 
 // GetChatUsers returns the list of user IDs in a specific chat
-func (h *Hub) GetChatUsers(chatID string) []string {
+func (h *Hub) GetChatUsers(chatID uuid.UUID) []uuid.UUID {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
 	if chat, exists := h.chats[chatID]; exists {
-		users := make([]string, 0, len(chat.Clients))
+		users := make([]uuid.UUID, 0, len(chat.Clients))
 		for userID := range chat.Clients {
 			users = append(users, userID)
 		}
 		return users
 	}
-	return []string{}
+	return []uuid.UUID{}
 }
 
 // GetClientCount returns the number of connected clients
@@ -226,7 +227,7 @@ func (h *Hub) GetChatStats() map[string]interface{} {
 
 	stats := make(map[string]interface{})
 	for chatID, chat := range h.chats {
-		stats[chatID] = map[string]interface{}{
+		stats[chatID.String()] = map[string]interface{}{
 			"name":       chat.Name,
 			"user_count": len(chat.Clients),
 			"created_at": chat.CreatedAt,
@@ -255,7 +256,7 @@ func (h *Hub) GetHubStats() map[string]interface{} {
 }
 
 // GetChat returns a chat by ID
-func (h *Hub) GetChat(chatID string) (*Chat, bool) {
+func (h *Hub) GetChat(chatID uuid.UUID) (*Chat, bool) {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
@@ -264,7 +265,7 @@ func (h *Hub) GetChat(chatID string) (*Chat, bool) {
 }
 
 // ChatExists checks if a chat exists
-func (h *Hub) ChatExists(chatID string) bool {
+func (h *Hub) ChatExists(chatID uuid.UUID) bool {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
@@ -273,7 +274,7 @@ func (h *Hub) ChatExists(chatID string) bool {
 }
 
 // GetClient returns a chat_client by user ID
-func (h *Hub) GetClient(userID string) (*Client, bool) {
+func (h *Hub) GetClient(userID uuid.UUID) (*Client, bool) {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
@@ -308,7 +309,7 @@ func (h *Hub) CleanupInactiveChats() {
 	defer h.mutex.Unlock()
 
 	for chatID, chat := range h.chats {
-		if len(chat.Clients) == 0 && chatID != "general" {
+		if len(chat.Clients) == 0 && chatID.String() != "general" {
 			delete(h.chats, chatID)
 			log.Printf("Removed inactive chat: %s", chatID)
 		}
@@ -316,7 +317,7 @@ func (h *Hub) CleanupInactiveChats() {
 }
 
 // RemoveUserFromAllChats removes a user from all chats
-func (h *Hub) RemoveUserFromAllChats(userID string) {
+func (h *Hub) RemoveUserFromAllChats(userID uuid.UUID) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
@@ -329,11 +330,11 @@ func (h *Hub) RemoveUserFromAllChats(userID string) {
 }
 
 // GetUserChats returns all chats a user is in
-func (h *Hub) GetUserChats(userID string) []string {
+func (h *Hub) GetUserChats(userID uuid.UUID) []uuid.UUID {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 
-	var userChats []string
+	var userChats []uuid.UUID
 	for chatID, chat := range h.chats {
 		if _, exists := chat.Clients[userID]; exists {
 			userChats = append(userChats, chatID)
@@ -343,7 +344,7 @@ func (h *Hub) GetUserChats(userID string) []string {
 }
 
 // IsUserInChat checks if a user is in a specific chat
-func (h *Hub) IsUserInChat(userID, chatID string) bool {
+func (h *Hub) IsUserInChat(userID, chatID uuid.UUID) bool {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 

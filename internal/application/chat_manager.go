@@ -8,7 +8,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/mahdi-cpp/iris-tools/collection_manager_v3"
+	"github.com/google/uuid"
+	"github.com/mahdi-cpp/messages-api/internal/collection_manager_gemini"
 	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
 	"github.com/mahdi-cpp/messages-api/internal/collections/message"
 )
@@ -21,7 +22,7 @@ const (
 type ChatManager struct {
 	mu                sync.RWMutex
 	chat              *chat.Chat
-	messages          *collection_manager_v3.Manager[*message.Message]
+	messages          *collection_manager_gemini.Manager[*message.Message]
 	maintenanceCtx    context.Context
 	cancelMaintenance context.CancelFunc
 	statsMu           sync.Mutex
@@ -34,7 +35,7 @@ func NewChatManager(chat *chat.Chat) (*ChatManager, error) {
 	}
 
 	var err error
-	manager.messages, err = collection_manager_v3.NewCollectionManager[*message.Message](filepath.Join(root, chat.ID, chatMessage), true)
+	manager.messages, err = collection_manager_gemini.NewCollectionManager[*message.Message](filepath.Join(root, chat.ID.String(), chatMessage))
 	if err != nil {
 		fmt.Println("Error opening chat manager:", err)
 	}
@@ -50,9 +51,9 @@ func (m *ChatManager) CreateMessage(addMessage *message.Message) error {
 	return nil
 }
 
-func (m *ChatManager) ReadMessage(messageId string) (*message.Message, error) {
+func (m *ChatManager) ReadMessage(messageId uuid.UUID) (*message.Message, error) {
 
-	selectMessage, err := m.messages.Get(messageId)
+	selectMessage, err := m.messages.Read(messageId)
 	if err != nil {
 		return nil, fmt.Errorf("error get messages")
 	}
@@ -62,7 +63,7 @@ func (m *ChatManager) ReadMessage(messageId string) (*message.Message, error) {
 
 func (m *ChatManager) ReadAllMessages() ([]*message.Message, error) {
 
-	all, err := m.messages.GetAll()
+	all, err := m.messages.ReadAll()
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +73,7 @@ func (m *ChatManager) ReadAllMessages() ([]*message.Message, error) {
 
 func (m *ChatManager) UpdateMessage(updateOptions message.UpdateOptions) (*message.Message, error) {
 
-	msg, err := m.messages.Get(updateOptions.MessageID)
+	msg, err := m.messages.Read(updateOptions.MessageID)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +87,7 @@ func (m *ChatManager) UpdateMessage(updateOptions message.UpdateOptions) (*messa
 	return msg, nil
 }
 
-func (m *ChatManager) DeleteMessage(messageID string) error {
+func (m *ChatManager) DeleteMessage(messageID uuid.UUID) error {
 	err := m.messages.Delete(messageID)
 	if err != nil {
 		return err
