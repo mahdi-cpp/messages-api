@@ -13,22 +13,90 @@ import (
 	"github.com/google/uuid"
 )
 
-// CollectionItem is the interface that every item in the collection must implement.
+// collectionItem is the interface that every item in the collection must implement.
 // The ID is of type uuid.UUID for type safety.
-type CollectionItem interface {
+type collectionItem interface {
 	SetID(uuid.UUID)
 	GetID() uuid.UUID
 }
 
 // Manager is the main struct for managing the collection.
-type Manager[T CollectionItem] struct {
+type Manager[T collectionItem] struct {
 	baseDir string
-	items   *Registry[T]
+	items   *registry[T]
 	mu      sync.RWMutex
 }
 
-// NewCollectionManager creates a new instance of Manager.
-func NewCollectionManager[T CollectionItem](path string) (*Manager[T], error) {
+// ---
+// registry section: in-memory data store.
+// This registry uses string keys, which is fine as uuid.UUID is always converted to string for storage.
+
+type registry[T any] struct {
+	items map[uuid.UUID]T
+	mu    sync.RWMutex
+}
+
+func newRegistry[T any]() *registry[T] {
+	return &registry[T]{items: make(map[uuid.UUID]T)}
+}
+
+func (r *registry[T]) Create(key uuid.UUID, value T) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.items[key] = value
+}
+
+func (r *registry[T]) Read(key uuid.UUID) (T, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	val, exists := r.items[key]
+	if !exists {
+		var zero T
+		return zero, errors.New("key not found")
+	}
+	return val, nil
+}
+
+func (r *registry[T]) ReadAll() []T {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	result := make([]T, 0, len(r.items))
+	for _, v := range r.items {
+		result = append(result, v)
+	}
+	return result
+}
+
+func (r *registry[T]) Update(key uuid.UUID, newValue T) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.items[key] = newValue
+}
+
+func (r *registry[T]) Delete(key uuid.UUID) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.items, key)
+}
+
+func (r *registry[T]) Clear() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.items = make(map[uuid.UUID]T)
+}
+
+func (r *registry[T]) IsEmpty() bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return len(r.items) == 0
+}
+
+// ---
+
+// New creates a new instance of Manager.
+func New[T collectionItem](path string) (*Manager[T], error) {
 
 	if strings.HasSuffix(path, ".json") {
 		return nil, errors.New("path must be a directory, not a file")
@@ -40,7 +108,7 @@ func NewCollectionManager[T CollectionItem](path string) (*Manager[T], error) {
 
 	manager := &Manager[T]{
 		baseDir: path,
-		items:   NewRegistry[T](),
+		items:   newRegistry[T](),
 	}
 
 	items, err := manager.readAllItemsFromDisk()
@@ -49,7 +117,7 @@ func NewCollectionManager[T CollectionItem](path string) (*Manager[T], error) {
 	}
 
 	for _, item := range items {
-		manager.items.Register(item.GetID().String(), item)
+		manager.items.Create(item.GetID(), item)
 	}
 
 	return manager, nil
@@ -138,7 +206,7 @@ func (m *Manager[T]) Create(newItem T) (T, error) {
 		return zero, errors.New("cannot create nil item")
 	}
 
-	if _, err := m.items.Get(newItem.GetID().String()); err == nil {
+	if _, err := m.items.Read(newItem.GetID()); err == nil {
 		var zero T
 		return zero, fmt.Errorf("item with ID %s already exists", newItem.GetID().String())
 	}
@@ -148,7 +216,7 @@ func (m *Manager[T]) Create(newItem T) (T, error) {
 		return zero, err
 	}
 
-	m.items.Register(newItem.GetID().String(), newItem)
+	m.items.Create(newItem.GetID(), newItem)
 	return newItem, nil
 }
 
@@ -157,7 +225,7 @@ func (m *Manager[T]) Read(id uuid.UUID) (T, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	return m.items.Get(id.String())
+	return m.items.Read(id)
 }
 
 // ReadAll items from the collection.
@@ -165,7 +233,7 @@ func (m *Manager[T]) ReadAll() ([]T, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	return m.items.GetAllValues(), nil
+	return m.items.ReadAll(), nil
 }
 
 // Update an existing item in the collection.
@@ -178,7 +246,7 @@ func (m *Manager[T]) Update(updatedItem T) (T, error) {
 		return zero, errors.New("cannot update with nil item")
 	}
 
-	if _, err := m.items.Get(updatedItem.GetID().String()); err != nil {
+	if _, err := m.items.Read(updatedItem.GetID()); err != nil {
 		var zero T
 		return zero, fmt.Errorf("item with ID %s does not exist", updatedItem.GetID().String())
 	}
@@ -188,7 +256,7 @@ func (m *Manager[T]) Update(updatedItem T) (T, error) {
 		return zero, err
 	}
 
-	m.items.Update(updatedItem.GetID().String(), updatedItem)
+	m.items.Update(updatedItem.GetID(), updatedItem)
 	return updatedItem, nil
 }
 
@@ -197,7 +265,7 @@ func (m *Manager[T]) Delete(id uuid.UUID) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if _, err := m.items.Get(id.String()); err != nil {
+	if _, err := m.items.Read(id); err != nil {
 		return fmt.Errorf("item with ID %s does not exist", id.String())
 	}
 
@@ -206,72 +274,6 @@ func (m *Manager[T]) Delete(id uuid.UUID) error {
 		return err
 	}
 
-	m.items.Delete(id.String())
+	m.items.Delete(id)
 	return nil
-}
-
-// ---
-// Registry section: in-memory data store.
-// This registry uses string keys, which is fine as uuid.UUID is always converted to string for storage.
-
-type Registry[T any] struct {
-	items map[string]T
-	mu    sync.RWMutex
-}
-
-func NewRegistry[T any]() *Registry[T] {
-	return &Registry[T]{items: make(map[string]T)}
-}
-
-func (r *Registry[T]) Register(key string, value T) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.items[key] = value
-}
-
-func (r *Registry[T]) Delete(key string) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	delete(r.items, key)
-}
-
-func (r *Registry[T]) Clear() {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.items = make(map[string]T)
-}
-
-func (r *Registry[T]) Get(key string) (T, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	val, exists := r.items[key]
-	if !exists {
-		var zero T
-		return zero, errors.New("key not found")
-	}
-	return val, nil
-}
-
-func (r *Registry[T]) Update(key string, newValue T) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.items[key] = newValue
-}
-
-func (r *Registry[T]) GetAllValues() []T {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	result := make([]T, 0, len(r.items))
-	for _, v := range r.items {
-		result = append(result, v)
-	}
-	return result
-}
-
-func (r *Registry[T]) IsEmpty() bool {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	return len(r.items) == 0
 }

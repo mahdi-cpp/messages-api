@@ -35,7 +35,7 @@ func NewChatManager(chat *chat.Chat) (*ChatManager, error) {
 	}
 
 	var err error
-	manager.messages, err = collection_manager_gemini.NewCollectionManager[*message.Message](filepath.Join(root, chat.ID.String(), chatMessage))
+	manager.messages, err = collection_manager_gemini.New[*message.Message](filepath.Join(root, chat.ID.String(), chatMessage))
 	if err != nil {
 		fmt.Println("Error opening chat manager:", err)
 	}

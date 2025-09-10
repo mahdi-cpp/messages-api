@@ -65,7 +65,7 @@ func NewApplicationManager() (*Manager, error) {
 
 	var err error
 	var chatsDirectory = config.GetPath("chats_test2")
-	manager.chatCollectionManager, err = collection_manager_gemini.NewCollectionManager[*chat.Chat](chatsDirectory)
+	manager.chatCollectionManager, err = collection_manager_gemini.New[*chat.Chat](chatsDirectory)
 	if err != nil {
 		panic(err)
 	}

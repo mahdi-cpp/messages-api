@@ -41,7 +41,7 @@ type Message struct {
 	MimeType     string `json:"mimeType,omitempty"`
 
 	// Message attributes
-	ReplyToMessageID string       `json:"replyToMessageId,omitempty"`
+	ReplyToMessageID uuid.UUID    `json:"replyToMessageId,omitempty"`
 	ForwardedFrom    *ForwardInfo `json:"forwardedFrom,omitempty"`
 	Entities         []Entity     `json:"entities,omitempty"`
 	Views            int          `json:"views,omitempty"`
@@ -66,24 +66,24 @@ type Message struct {
 
 // ForwardInfo Supporting structs
 type ForwardInfo struct {
-	FromChatID    int       `json:"fromChatId"`
-	FromMessageID int       `json:"fromMessageId"`
-	FromUserID    int       `json:"fromUserId"`
+	FromChatID    uuid.UUID `json:"fromChatId"`
+	FromMessageID uuid.UUID `json:"fromMessageId"`
+	FromUserID    uuid.UUID `json:"fromUserId"`
 	OriginalDate  time.Time `json:"originalDate"`
 }
 
 type Entity struct {
-	Type   string `json:"type"`             // mention, hashtag, bot_command, url, etc.
-	Offset int    `json:"offset"`           // Offset in UTF-16 code units
-	Length int    `json:"length"`           // Length in UTF-16 code units
-	URL    string `json:"url,omitempty"`    // For "text_link" only
-	UserID string `json:"userId,omitempty"` // For "mention" only
+	Type   string    `json:"type"`             // mention, hashtag, bot_command, url, etc.
+	Offset int       `json:"offset"`           // Offset in UTF-16 code units
+	Length int       `json:"length"`           // Length in UTF-16 code units
+	URL    string    `json:"url,omitempty"`    // For "text_link" only
+	UserID uuid.UUID `json:"userId,omitempty"` // For "mention" only
 }
 
 type Reaction struct {
-	Emoji   string   `json:"emoji"`
-	Count   int      `json:"count"`
-	UserIDs []string `json:"userIds,omitempty"` // Users who used this reaction
+	Emoji   string      `json:"emoji"`
+	Count   int         `json:"count"`
+	UserIDs []uuid.UUID `json:"userIds,omitempty"` // Users who used this reaction
 }
 
 type Poll struct {
@@ -97,9 +97,9 @@ type Poll struct {
 }
 
 type PollOption struct {
-	Text     string   `json:"text"`
-	Votes    int      `json:"votes"`
-	VoterIDs []string `json:"voterIds,omitempty"`
+	Text     string      `json:"text"`
+	Votes    int         `json:"votes"`
+	VoterIDs []uuid.UUID `json:"voterIds,omitempty"`
 }
 
 type Location struct {
@@ -109,14 +109,14 @@ type Location struct {
 }
 
 type Contact struct {
-	PhoneNumber string `json:"phoneNumber"`
-	FirstName   string `json:"firstName"`
-	LastName    string `json:"lastName,omitempty"`
-	UserID      string `json:"userId,omitempty"` // If the contact is a registered user
+	PhoneNumber string    `json:"phoneNumber"`
+	FirstName   string    `json:"firstName"`
+	LastName    string    `json:"lastName,omitempty"`
+	UserID      uuid.UUID `json:"userId,omitempty"` // If the contact is a registered user
 }
 
 type TypingStatus struct {
-	ChatID string `json:"chatId"`
-	UserID string `json:"userId"`
-	Typing bool   `json:"typing"`
+	ChatID uuid.UUID `json:"chatId"`
+	UserID uuid.UUID `json:"userId"`
+	Typing bool      `json:"typing"`
 }
