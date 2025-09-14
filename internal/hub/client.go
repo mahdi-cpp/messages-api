@@ -1,11 +1,11 @@
 package hub
 
 import (
-	"encoding/json"
 	"log"
 	"sync"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )

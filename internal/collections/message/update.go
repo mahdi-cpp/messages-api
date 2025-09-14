@@ -13,8 +13,7 @@ type UpdateOptions struct {
 	ChatID     uuid.UUID   `json:"chatId"`
 	MessageID  uuid.UUID   `json:"messageId"`
 
-	Content     string      `json:"content"`
-	MessageType MessageType `json:"type"` // Changed name to avoid conflict
+	Content string `json:"content"`
 
 	// Message attributes
 	ReplyToMessageID string       `json:"replyToMessageId,omitempty"`

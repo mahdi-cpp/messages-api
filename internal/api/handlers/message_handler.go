@@ -12,10 +12,10 @@ import (
 )
 
 type MessageHandler struct {
-	appManager *application.Manager
+	appManager *application.AppManager
 }
 
-func NewMessageHandler(appManager *application.Manager) *MessageHandler {
+func NewMessageHandler(appManager *application.AppManager) *MessageHandler {
 	return &MessageHandler{
 		appManager: appManager,
 	}

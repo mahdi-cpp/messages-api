@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"testing"
 	"time"
 
@@ -18,7 +18,7 @@ func TestMessageCreate(t *testing.T) {
 	testMessage := &message.Message{
 		MessageType: "message",
 		Width:       450,
-		UserID:      config.UserId,
+		UserID:      config.Mahdi,
 		ChatID:      config.ChatID,
 		Content:     "Test Message 1001",
 		CreatedAt:   time.Now(),
@@ -47,7 +47,7 @@ func TestMessageRead(t *testing.T) {
 	var currentURL = baseURL + "messages"
 
 	queryParams := map[string]interface{}{
-		"userId":    config.UserId,
+		"userId":    config.Mahdi,
 		"chatId":    config.ChatID,
 		"messageId": config.MessageID,
 	}
@@ -69,7 +69,7 @@ func TestMessageReadAll(t *testing.T) {
 	var currentURL = baseURL + "messages"
 
 	queryParams := map[string]interface{}{
-		"userId":    config.UserId,
+		"userId":    config.Mahdi,
 		"chatId":    config.ChatID,
 		"offset":    0,
 		"limit":     100,
@@ -99,9 +99,9 @@ func TestMessageUpdate(t *testing.T) {
 
 	testMessage := &message.UpdateOptions{
 		MessageType: "message",
-		UserID:      config.UserId,
+		UserID:      config.Mahdi,
 		ChatID:      config.ChatID,
-		MessageID:   "01992e25-4ba9-73ae-9f26-bdfd0d4bceb9",
+		MessageID:   config.MessageID,
 		Content:     text,
 	}
 

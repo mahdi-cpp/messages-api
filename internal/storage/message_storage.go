@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"io/ioutil"
 
 	"github.com/mahdi-cpp/messages-api/internal/collections/message"

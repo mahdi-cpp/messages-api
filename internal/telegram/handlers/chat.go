@@ -40,7 +40,7 @@ func GetChats(c *gin.Context) {
 }
 
 // CreateChat godoc
-// @Summary Create a new chat
+// @Summary create a new chat
 // @Description Creates a new chat with a title and initial users.
 // @Accept  json
 // @Produce  json

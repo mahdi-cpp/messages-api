@@ -15,8 +15,12 @@ const usersDir = "users"
 var (
 	Mahdi  uuid.UUID
 	Parsa  uuid.UUID
-	Behzad uuid.UUID
+	Ali    uuid.UUID
 	Golnar uuid.UUID
+)
+var (
+	Digikala uuid.UUID
+	Varzesh3 uuid.UUID
 )
 var (
 	ChatID    uuid.UUID
@@ -36,12 +40,26 @@ func initUsers() {
 		log.Fatalf("failed to parse Mahdi: %v", err)
 	}
 
-	Behzad, err = uuid.Parse("018f3a8b-1b32-729c-a1b2-9876a5b4c3d2")
+	Ali, err = uuid.Parse("018f3a8b-1b32-729c-a1b2-9876a5b4c3d2")
 	if err != nil {
 		log.Fatalf("failed to parse Mahdi: %v", err)
 	}
 
 	Golnar, err = uuid.Parse("018f3a8b-1b32-729f-d4e5-918273645a2c")
+	if err != nil {
+		log.Fatalf("failed to parse Mahdi: %v", err)
+	}
+
+}
+
+func initChats() {
+	var err error
+
+	Digikala, err = uuid.Parse("018f3a8b-1b32-7292-b2d9-1237a7b8c8d2")
+	if err != nil {
+		log.Fatalf("failed to parse Mahdi: %v", err)
+	}
+	Varzesh3, err = uuid.Parse("018f3a8b-1b32-7293-c1d4-8765f5d1e2f3")
 	if err != nil {
 		log.Fatalf("failed to parse Mahdi: %v", err)
 	}

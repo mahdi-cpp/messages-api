@@ -1,4 +1,4 @@
-package message
+package telegram_message
 
 import (
 	"time"

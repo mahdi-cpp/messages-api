@@ -1,7 +1,6 @@
-package collection_manager_gemini
+package collection_manager_gemini_v2
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 )
 
@@ -18,13 +18,6 @@ import (
 type collectionItem interface {
 	SetID(uuid.UUID)
 	GetID() uuid.UUID
-}
-
-// Manager is the main struct for managing the collection.
-type Manager[T collectionItem] struct {
-	baseDir string
-	items   *registry[T]
-	mu      sync.RWMutex
 }
 
 // ---
@@ -40,13 +33,13 @@ func newRegistry[T any]() *registry[T] {
 	return &registry[T]{items: make(map[uuid.UUID]T)}
 }
 
-func (r *registry[T]) Create(key uuid.UUID, value T) {
+func (r *registry[T]) create(key uuid.UUID, value T) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.items[key] = value
 }
 
-func (r *registry[T]) Read(key uuid.UUID) (T, error) {
+func (r *registry[T]) read(key uuid.UUID) (T, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -58,7 +51,7 @@ func (r *registry[T]) Read(key uuid.UUID) (T, error) {
 	return val, nil
 }
 
-func (r *registry[T]) ReadAll() []T {
+func (r *registry[T]) readAll() []T {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -69,31 +62,50 @@ func (r *registry[T]) ReadAll() []T {
 	return result
 }
 
-func (r *registry[T]) Update(key uuid.UUID, newValue T) {
+func (r *registry[T]) update(key uuid.UUID, newValue T) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.items[key] = newValue
 }
 
-func (r *registry[T]) Delete(key uuid.UUID) {
+func (r *registry[T]) delete(key uuid.UUID) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.items, key)
 }
 
-func (r *registry[T]) Clear() {
+// Count returns the number of items in the registry.
+func (r *registry[T]) count() int {
+	// Acquire a read lock to safely read the map.
+	r.mu.RLock()
+	// The defer statement ensures to unlock happens before the function returns.
+	defer r.mu.RUnlock()
+	return len(r.items)
+}
+
+func (r *registry[T]) clear() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.items = make(map[uuid.UUID]T)
 }
 
-func (r *registry[T]) IsEmpty() bool {
+func (r *registry[T]) isEmpty() bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return len(r.items) == 0
 }
 
 // ---
+
+// Manager is the main struct for managing the collection.
+type Manager[T collectionItem] struct {
+	baseDir string
+	items   *registry[T]
+	mu      sync.RWMutex
+	// fileMutexes is a map of mutexes, one for each file.
+	// The key is the item's UUID.
+	fileMutexes map[uuid.UUID]*sync.Mutex
+}
 
 // New creates a new instance of Manager.
 func New[T collectionItem](path string) (*Manager[T], error) {
@@ -107,8 +119,9 @@ func New[T collectionItem](path string) (*Manager[T], error) {
 	}
 
 	manager := &Manager[T]{
-		baseDir: path,
-		items:   newRegistry[T](),
+		baseDir:     path,
+		items:       newRegistry[T](),
+		fileMutexes: make(map[uuid.UUID]*sync.Mutex),
 	}
 
 	items, err := manager.readAllItemsFromDisk()
@@ -117,7 +130,7 @@ func New[T collectionItem](path string) (*Manager[T], error) {
 	}
 
 	for _, item := range items {
-		manager.items.Create(item.GetID(), item)
+		manager.items.create(item.GetID(), item)
 	}
 
 	return manager, nil
@@ -126,6 +139,23 @@ func New[T collectionItem](path string) (*Manager[T], error) {
 // itemPath returns the path to a JSON file based on the item's ID.
 func (m *Manager[T]) itemPath(id uuid.UUID) string {
 	return filepath.Join(m.baseDir, id.String()+".json")
+}
+
+// getOrCreateMutex returns a mutex for a given item ID, creating it if it doesn't exist.
+func (m *Manager[T]) getOrCreateMutex(id uuid.UUID) *sync.Mutex {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.fileMutexes[id]; !ok {
+		m.fileMutexes[id] = &sync.Mutex{}
+	}
+	return m.fileMutexes[id]
+}
+
+// deleteMutex removes a mutex from the map after its item has been deleted.
+func (m *Manager[T]) deleteMutex(id uuid.UUID) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.fileMutexes, id)
 }
 
 // ---
@@ -198,15 +228,16 @@ func (m *Manager[T]) writeItemToDisk(item T) error {
 
 // Create a new item in the collection.
 func (m *Manager[T]) Create(newItem T) (T, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	mutex := m.getOrCreateMutex(newItem.GetID())
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	if reflect.ValueOf(newItem).IsNil() {
 		var zero T
 		return zero, errors.New("cannot create nil item")
 	}
 
-	if _, err := m.items.Read(newItem.GetID()); err == nil {
+	if _, err := m.items.read(newItem.GetID()); err == nil {
 		var zero T
 		return zero, fmt.Errorf("item with ID %s already exists", newItem.GetID().String())
 	}
@@ -216,37 +247,40 @@ func (m *Manager[T]) Create(newItem T) (T, error) {
 		return zero, err
 	}
 
-	m.items.Create(newItem.GetID(), newItem)
+	m.items.create(newItem.GetID(), newItem)
 	return newItem, nil
 }
 
 // Read an item from the collection by its ID.
 func (m *Manager[T]) Read(id uuid.UUID) (T, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	return m.items.Read(id)
+	mutex := m.getOrCreateMutex(id)
+	mutex.Lock()
+	defer mutex.Unlock()
+	// NOTE: The read operation could use an RWMutex for better performance,
+	// but for simplicity, we use a Mutex here.
+	return m.items.read(id)
 }
 
 // ReadAll items from the collection.
 func (m *Manager[T]) ReadAll() ([]T, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	return m.items.ReadAll(), nil
+	// NOTE: This operation still needs a coarse-grained lock or a more complex solution
+	// to prevent items from being created/deleted while iterating.
+	// For now, we will use the registry's lock which is a coarse-grained lock.
+	return m.items.readAll(), nil
 }
 
 // Update an existing item in the collection.
 func (m *Manager[T]) Update(updatedItem T) (T, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	mutex := m.getOrCreateMutex(updatedItem.GetID())
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	if reflect.ValueOf(updatedItem).IsNil() {
 		var zero T
 		return zero, errors.New("cannot update with nil item")
 	}
 
-	if _, err := m.items.Read(updatedItem.GetID()); err != nil {
+	if _, err := m.items.read(updatedItem.GetID()); err != nil {
 		var zero T
 		return zero, fmt.Errorf("item with ID %s does not exist", updatedItem.GetID().String())
 	}
@@ -256,16 +290,17 @@ func (m *Manager[T]) Update(updatedItem T) (T, error) {
 		return zero, err
 	}
 
-	m.items.Update(updatedItem.GetID(), updatedItem)
+	m.items.update(updatedItem.GetID(), updatedItem)
 	return updatedItem, nil
 }
 
 // Delete an item from the collection by its ID.
 func (m *Manager[T]) Delete(id uuid.UUID) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	mutex := m.getOrCreateMutex(id)
+	mutex.Lock()
+	defer mutex.Unlock()
 
-	if _, err := m.items.Read(id); err != nil {
+	if _, err := m.items.read(id); err != nil {
 		return fmt.Errorf("item with ID %s does not exist", id.String())
 	}
 
@@ -274,6 +309,12 @@ func (m *Manager[T]) Delete(id uuid.UUID) error {
 		return err
 	}
 
-	m.items.Delete(id)
+	m.items.delete(id)
+	m.deleteMutex(id) // Clean up the mutex after deleting the item
 	return nil
+}
+
+// Count an item from the collection by its ID.
+func (m *Manager[T]) Count() int {
+	return m.items.count()
 }

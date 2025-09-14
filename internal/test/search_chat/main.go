@@ -44,7 +44,7 @@ func main() {
 		fmt.Printf("Chat ID: %s, Title: %s\n", result.Value.ID, result.Value.Title)
 	}
 
-	// Create a sample chat with members
+	// create a sample chat with members
 	chat1 := chat.Chat{
 		Members: []chat.Member{
 			{

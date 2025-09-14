@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"log"
 	"net/url"
 	"time"
@@ -73,7 +73,7 @@ func main() {
 	sendMessage(c, userID, username, "Hello my family", "family_chat")
 
 	select {}
-	// Create a channel to listen for interrupt signals (like Ctrl+C).
+	// create a channel to listen for interrupt signals (like Ctrl+C).
 	//interrupt := make(chan os.Signal, 1)
 	//signal.Notify(interrupt, os.Interrupt)
 
@@ -106,7 +106,7 @@ type JoinChat struct {
 
 func sendJoinChat(c *websocket.Conn, chatID string) {
 
-	// 1. Create the Go struct with the message data.
+	// 1. create the Go struct with the message data.
 	// You'll need to install the UUID package: `go get github.com/google/uuid`
 	msg := JoinChat{
 		Type:   "join_chat",
@@ -132,7 +132,7 @@ func sendJoinChat(c *websocket.Conn, chatID string) {
 
 func sendMessage(c *websocket.Conn, currentUserID, currentUsername, content, currentChat string) {
 
-	// 1. Create the Go struct with the message data.
+	// 1. create the Go struct with the message data.
 	// You'll need to install the UUID package: `go get github.com/google/uuid`
 	msg := Message{
 		Type:      "message",

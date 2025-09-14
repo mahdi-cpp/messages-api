@@ -1,0 +1,11 @@
+
+MessageTypeText     MessageType = "text"
+MessageTypePhoto    MessageType = "photo"
+MessageTypeVideo    MessageType = "video"
+MessageTypeDocument MessageType = "document"
+MessageTypeAudio    MessageType = "audio"
+MessageTypeVoice    MessageType = "voice"
+MessageTypeSticker  MessageType = "sticker"
+MessageTypeLocation MessageType = "location"
+MessageTypeContact  MessageType = "contact"
+MessageTypePoll     MessageType = "poll"

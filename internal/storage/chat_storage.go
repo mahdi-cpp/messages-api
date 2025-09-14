@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/goccy/go-json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -29,13 +29,13 @@ func getMessagePath(chatID, messageID string) string {
 }
 
 func SaveChat(chat *chat.Chat) error {
-	// Create chat directory if it doesn't exist
+	// create chat directory if it doesn't exist
 	chatPath := getChatPath(chat.ID)
 	if err := os.MkdirAll(chatPath, 0755); err != nil {
 		return err
 	}
 
-	// Create message directory if it doesn't exist
+	// create message directory if it doesn't exist
 	messagesPath := getChatMessagesPath(chat.ID)
 	if err := os.MkdirAll(messagesPath, 0755); err != nil {
 		return err

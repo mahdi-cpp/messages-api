@@ -9,8 +9,6 @@ import (
 
 const MaxLimit = 1000
 
-// Steps: Filters->Sorting->Pagination
-
 type SearchOptions struct {
 	UserID    uuid.UUID `form:"userId"`
 	ChatID    uuid.UUID `form:"chatId"`

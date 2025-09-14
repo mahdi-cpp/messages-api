@@ -19,3 +19,9 @@ https://chat.deepseek.com/a/chat/s/f804f2ac-4125-4884-897a-8ebef261b12c
 https://chat.deepseek.com/a/chat/s/0a496f86-10a6-449d-ad1d-0cf6f2498da0
 
 https://core.telegram.org/methods
+
+
+
+### Integrate Collection Manager with Timeout Control
+https://chat.deepseek.com/a/chat/s/b1df1051-03b7-4a60-9b97-ceae4f32305d
+https://gemini.google.com/app/26a27125dfbd8dcf

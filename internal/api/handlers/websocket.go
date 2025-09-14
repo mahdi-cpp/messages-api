@@ -10,17 +10,17 @@ import (
 
 // WebSocketHandler handles WebSocket connections
 type WebSocketHandler struct {
-	appManager *application.Manager
+	appManager *application.AppManager
 }
 
 // ServeWs is the legacy function for backward compatibility
-func ServeWs(appManager *application.Manager, w http.ResponseWriter, r *http.Request) {
+func ServeWs(appManager *application.AppManager, w http.ResponseWriter, r *http.Request) {
 	handler1 := NewWebSocketHandler(appManager)
 	handler1.ServeHTTP(w, r)
 }
 
 // NewWebSocketHandler creates a new WebSocket handler
-func NewWebSocketHandler(appManager *application.Manager) *WebSocketHandler {
+func NewWebSocketHandler(appManager *application.AppManager) *WebSocketHandler {
 	return &WebSocketHandler{
 		appManager: appManager,
 	}

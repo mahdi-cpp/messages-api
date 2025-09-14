@@ -1,9 +1,9 @@
 package chat_client
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/goccy/go-json"
 	"log"
 	"net/url"
 	"os"

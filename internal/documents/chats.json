@@ -2,7 +2,7 @@
   {
     "id": "018f3a8b-1b32-7292-b2d9-1237a7b8c8d2",
     "type": "private",
-    "title": "Private Chat with Sara",
+    "title": "Digikala",
     "username": "",
     "description": "One-on-one conversation.",
     "avatar": "https://example.com/avatars/user_alex.png",
@@ -67,8 +67,8 @@
   },
   {
     "id": "018f3a8b-1b32-7293-c1d4-8765f5d1e2f3",
-    "type": "group",
-    "title": "Friends Group",
+    "type": "channel",
+    "title": "Varzesh3 ",
     "username": "project_omega_team",
     "description": "Collaboration on Project Omega.",
     "avatar": "https://example.com/avatars/project_omega.png",

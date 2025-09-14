@@ -2,8 +2,8 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
+	"github.com/goccy/go-json"
 	"io"
 	"net/http"
 	"testing"
@@ -26,11 +26,11 @@ func createMessage(newChat *message.Message) (*message.Message, error) {
 		return nil, fmt.Errorf("failed to marshal message: %w", err)
 	}
 
-	// 3. Create a new io.Reader from the JSON byte slice.
+	// 3. create a new io.Reader from the JSON byte slice.
 	// This makes the data streamable for the HTTP request.
 	bodyReader := bytes.NewReader(jsonData)
 
-	// 4. Create the new POST request.
+	// 4. create the new POST request.
 	req, err := http.NewRequest("POST", fullURL, bodyReader)
 	if err != nil {
 		fmt.Println("Error creating POST request:", err)

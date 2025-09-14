@@ -43,7 +43,7 @@ type Chat struct {
 	CreatedAt             time.Time       `json:"createdAt"`
 	UpdatedAt             time.Time       `json:"updatedAt"`
 	DeletedAt             *time.Time      `json:"deletedAt,omitempty"`
-	Version               int             `json:"version"`
+	Version               string          `json:"version"`
 }
 
 type Member struct {

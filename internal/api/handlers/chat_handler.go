@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,10 +13,10 @@ import (
 )
 
 type ChatHandler struct {
-	appManager *application.Manager
+	appManager *application.AppManager
 }
 
-func NewChatHandler(appManager *application.Manager) *ChatHandler {
+func NewChatHandler(appManager *application.AppManager) *ChatHandler {
 	return &ChatHandler{
 		appManager: appManager,
 	}
@@ -176,30 +177,37 @@ func (h *ChatHandler) readSingleChat(c *gin.Context, chatID uuid.UUID) {
 // @Router /chats/{id} [put]
 func (h *ChatHandler) Update(c *gin.Context) {
 
-	id := c.Param("id")
-	chatId, err := uuid.Parse(id)
-	if err != nil {
-		return
-	}
-
 	var request chat.UpdateOptions
 	if err := c.ShouldBindJSON(&request); err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON body: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid JSON body: " + err.Error(),
+		})
 		return
 	}
 
-	//for _, member := range request.Members {
-	//	fmt.Println("members:", member.UserID)
-	//}
+	// اعتبارسنجی - حداقل یک چت باید انتخاب شده باشد
+	if len(request.ChatIDs) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "At least one chat ID is required",
+		})
+		return
+	}
 
-	err = h.appManager.UpdateChat(chatId, request)
+	err := h.appManager.UpdateChats(request)
 	if err != nil {
-		c.JSON(http.StatusNotModified, gin.H{"message": "failed update chat"})
+		// بهتر است لاگ خطا نیز ثبت شود
+		log.Printf("Update failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to update chat(s)",
+			"error":   err.Error(),
+		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "successfully updated"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully updated",
+		"count":   len(request.ChatIDs),
+	})
 }
 
 // BuckUpdate
@@ -239,13 +247,19 @@ func (h *ChatHandler) BuckUpdate(c *gin.Context) {
 // @Success 200 {object} object "Chat deleted successfully"
 // @Router /chats/{id} [delete]
 func (h *ChatHandler) Delete(c *gin.Context) {
-	// Read the ID from the URL path
-	id := c.Param("id")
 
-	// The 'id' variable will contain "12" from the URL
-	fmt.Printf("Deleting chat with ID: %s\n", id)
+	id := c.Param("chatId")
+	chatId, err := uuid.Parse(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-	// ... your chat deletion logic here
+	err = h.appManager.ChatDelete(chatId)
+	if err != nil {
+		c.JSON(http.StatusNotModified, gin.H{"error": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Chat with ID %s deleted", id)})
 }

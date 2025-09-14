@@ -9,39 +9,24 @@ import (
 func (a *Message) SetID(id uuid.UUID) { a.ID = id }
 func (a *Message) GetID() uuid.UUID   { return a.ID }
 
-type MessageType string
-
-const (
-	MessageTypeText     MessageType = "text"
-	MessageTypePhoto    MessageType = "photo"
-	MessageTypeVideo    MessageType = "video"
-	MessageTypeDocument MessageType = "document"
-	MessageTypeAudio    MessageType = "audio"
-	MessageTypeVoice    MessageType = "voice"
-	MessageTypeSticker  MessageType = "sticker"
-	MessageTypeLocation MessageType = "location"
-	MessageTypeContact  MessageType = "contact"
-	MessageTypePoll     MessageType = "poll"
-)
-
 type Message struct {
-	ID          uuid.UUID   `json:"id"`
-	ChatID      uuid.UUID   `json:"chatId"`
-	UserID      uuid.UUID   `json:"userId"`
-	Content     string      `json:"content"`
-	MessageType MessageType `json:"type"` // Changed name to avoid conflict
+	ID      uuid.UUID `json:"id"`
+	ChatID  uuid.UUID `json:"chatId"`
+	UserID  uuid.UUID `json:"userId"`
+	Content string    `json:"content"`
 
-	// Media fields
-	MediaURL     string `json:"mediaUrl,omitempty"`
-	ThumbnailURL string `json:"thumbnailUrl,omitempty"`
-	FileSize     int64  `json:"fileSize,omitempty"`
-	Duration     int    `json:"duration,omitempty"`
-	Width        int    `json:"width,omitempty"`
-	Height       int    `json:"height,omitempty"`
-	MimeType     string `json:"mimeType,omitempty"`
+	// Data types
+	AssetType string    `json:"assetType"`
+	Medias    []*Media  `json:"medias,omitempty"`
+	Voice     *Voice    `json:"voice,omitempty"`
+	Music     *Music    `json:"music,omitempty"`
+	Document  *Document `json:"document,omitempty"`
+	Contact   *Contact  `json:"contact,omitempty"`
+	Location  *Location `json:"location,omitempty"`
+	Poll      *Poll     `json:"poll,omitempty"`
 
 	// Message attributes
-	ReplyToMessageID uuid.UUID    `json:"replyToMessageId,omitempty"`
+	ReplyToMessageID *uuid.UUID   `json:"replyToMessageId,omitempty"`
 	ForwardedFrom    *ForwardInfo `json:"forwardedFrom,omitempty"`
 	Entities         []Entity     `json:"entities,omitempty"`
 	Views            int          `json:"views,omitempty"`
@@ -49,20 +34,78 @@ type Message struct {
 	IsEdited         bool         `json:"isEdited,omitempty"`
 	IsPinned         bool         `json:"isPinned,omitempty"`
 	IsDeleted        bool         `json:"isDeleted,omitempty"`
-
-	// Additional data types
-	Poll     *Poll     `json:"poll,omitempty"`
-	Location *Location `json:"location,omitempty"`
-	Contact  *Contact  `json:"contact,omitempty"`
+	MediaUnread      bool         `json:"mediaUnread"`
+	Silent           bool         `json:"silent,omitempty"`
 
 	// Timestamps and metadata
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 	DeletedAt     time.Time `json:"deletedAt,omitempty"`
-	ExpiryAt      time.Time `json:"expiryAt,omitempty"`
 	EncryptionKey string    `json:"encryptionKey,omitempty"`
-	Version       string    `json:"version,omitempty"`
+	Version       string    `json:"version"`
 }
+
+//--- Data Types
+
+type Media struct {
+	ID       uuid.UUID `json:"id"`
+	FileSize int64     `json:"fileSize"`
+	Width    int       `json:"width"`
+	Height   int       `json:"height"`
+	MimeType string    `json:"mimeType"`
+	Duration int       `json:"duration"`
+}
+
+type Music struct {
+	ID       uuid.UUID `json:"id"`
+	FileSize int64     `json:"fileSize"`
+	MimeType string    `json:"mimeType"`
+	Duration int       `json:"duration"`
+}
+
+type Voice struct {
+	ID       uuid.UUID `json:"id"`
+	FileSize int64     `json:"fileSize"`
+	MimeType string    `json:"mimeType"`
+	Duration int       `json:"duration"`
+}
+
+type Document struct {
+	PhoneNumber string    `json:"phoneNumber"`
+	FirstName   string    `json:"firstName"`
+	LastName    string    `json:"lastName"`
+	UserID      uuid.UUID `json:"userId"` // If the contact is a registered user
+}
+
+type Contact struct {
+	PhoneNumber string    `json:"phoneNumber"`
+	FirstName   string    `json:"firstName"`
+	LastName    string    `json:"lastName"`
+	UserID      uuid.UUID `json:"userId"` // If the contact is a registered user
+}
+type Location struct {
+	Longitude float64 `json:"longitude"`
+	Latitude  float64 `json:"latitude"`
+	Accuracy  float64 `json:"accuracy"` // Accuracy radius in meters
+}
+
+type Poll struct {
+	Question              string       `json:"question"`
+	Options               []PollOption `json:"options"`
+	TotalVotes            int          `json:"totalVotes"`
+	IsAnonymous           bool         `json:"isAnonymous"`
+	Type                  string       `json:"type"`
+	AllowsMultipleAnswers bool         `json:"allowsMultipleAnswers"`
+	CloseDate             time.Time    `json:"closeDate,omitempty"`
+}
+
+type PollOption struct {
+	Text     string      `json:"text"`
+	Votes    int         `json:"votes"`
+	VoterIDs []uuid.UUID `json:"voterIds"`
+}
+
+//---
 
 // ForwardInfo Supporting structs
 type ForwardInfo struct {
@@ -84,35 +127,6 @@ type Reaction struct {
 	Emoji   string      `json:"emoji"`
 	Count   int         `json:"count"`
 	UserIDs []uuid.UUID `json:"userIds,omitempty"` // Users who used this reaction
-}
-
-type Poll struct {
-	Question              string       `json:"question"`
-	Options               []PollOption `json:"options"`
-	TotalVotes            int          `json:"totalVotes"`
-	IsAnonymous           bool         `json:"isAnonymous"`
-	Type                  string       `json:"type"` // regular or quiz
-	AllowsMultipleAnswers bool         `json:"allowsMultipleAnswers"`
-	CloseDate             time.Time    `json:"closeDate,omitempty"`
-}
-
-type PollOption struct {
-	Text     string      `json:"text"`
-	Votes    int         `json:"votes"`
-	VoterIDs []uuid.UUID `json:"voterIds,omitempty"`
-}
-
-type Location struct {
-	Longitude float64 `json:"longitude"`
-	Latitude  float64 `json:"latitude"`
-	Accuracy  float64 `json:"accuracy,omitempty"` // Accuracy radius in meters
-}
-
-type Contact struct {
-	PhoneNumber string    `json:"phoneNumber"`
-	FirstName   string    `json:"firstName"`
-	LastName    string    `json:"lastName,omitempty"`
-	UserID      uuid.UUID `json:"userId,omitempty"` // If the contact is a registered user
 }
 
 type TypingStatus struct {

@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/goccy/go-json"
 	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
 )
 

@@ -8,7 +8,7 @@ import (
 )
 
 type UpdateOptions struct {
-	ChatIDs []string `json:"chatIds,omitempty"`
+	ChatIDs []uuid.UUID `json:"chatIds,omitempty"`
 
 	Type        string `json:"type"` // "private", "group", "channel", "supergroup"
 	Title       string `json:"title"`

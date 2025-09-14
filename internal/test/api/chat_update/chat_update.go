@@ -6,8 +6,8 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
+	"github.com/goccy/go-json"
 	"io"
 	"log"
 	"net/http"
@@ -27,11 +27,11 @@ func updateChats(chatID string, options chat.UpdateOptions) error {
 		return err
 	}
 
-	// 3. Create a new io.Reader from the JSON byte slice.
+	// 3. create a new io.Reader from the JSON byte slice.
 	// This makes the data streamable for the HTTP request.
 	bodyReader := bytes.NewReader(jsonData)
 
-	// 4. Create the new PATCH request.
+	// 4. create the new PATCH request.
 	req, err := http.NewRequest("PATCH", fullURL, bodyReader)
 	if err != nil {
 		fmt.Println("Error creating PATCH request:", err)

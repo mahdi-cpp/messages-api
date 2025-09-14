@@ -1,11 +1,11 @@
 package hub
 
 import (
-	"encoding/json"
 	"log"
 	"sync"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/mahdi-cpp/messages-api/internal/config"
 )
@@ -47,7 +47,7 @@ func NewHub(messages chan *Message) *Hub {
 		messagesToManager: messages,
 	}
 
-	// Create default chat
+	// create default chat
 	hub.CreateChat(config.ChatID, "Admin Chat")
 
 	return hub

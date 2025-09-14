@@ -1,8 +1,8 @@
 package hub
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/goccy/go-json"
 	"log"
 	"time"
 
@@ -71,7 +71,7 @@ func (h *Hub) handleForSave(userID, chatID uuid.UUID, content string) {
 //		return
 //	}
 //
-//	// Create the message to broadcast
+//	// create the message to broadcast
 //	chatMessage := map[string]interface{}{
 //		"type":    "message",
 //		"id":      messageID,

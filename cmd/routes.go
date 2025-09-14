@@ -8,7 +8,7 @@ import (
 
 // setupRoutes takes the router and dependencies as arguments
 // to ensure all routes are registered on the same instance.
-func setupRoutes(router *gin.Engine, appManager *application.Manager,
+func setupRoutes(router *gin.Engine, appManager *application.AppManager,
 	chatHandler *handlers.ChatHandler,
 	messageHandler *handlers.MessageHandler,
 ) {

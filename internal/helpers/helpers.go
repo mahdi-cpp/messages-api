@@ -2,8 +2,8 @@ package helpers
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
+	"github.com/goccy/go-json"
 	"io"
 	"net/http"
 	"net/url"
@@ -70,7 +70,7 @@ func MakeRequest(t *testing.T, method, endpoint string, queryParams map[string]i
 	fmt.Println(u.String())
 	fmt.Println("")
 
-	// Create request
+	// create request
 	req, err := http.NewRequest(method, u.String(), bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)

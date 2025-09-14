@@ -1,9 +1,9 @@
 package collection_manager_v5
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/goccy/go-json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,7 +30,7 @@ func New[T CollectionItem](path string) (*Manager[T], error) {
 		return nil, errors.New("path must be a directory, not a file")
 	}
 
-	// Create directory if it doesn't exist
+	// create directory if it doesn't exist
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create directory: %w", err)
 	}
@@ -46,7 +46,7 @@ func New[T CollectionItem](path string) (*Manager[T], error) {
 		return nil, fmt.Errorf("failed to load items: %w", err)
 	}
 
-	// Create all loaded items
+	// create all loaded items
 	for _, item := range items {
 		manager.items.Create(item.GetID(), item)
 	}

@@ -1,5 +1,8 @@
 
-
+- [x] collection_manager update
+- [ ] websocket
+- [ ] upload download service
+- [ ] log
 
 ### Chats REST API
 
@@ -15,12 +18,12 @@
 - [ ]
 - [ ]
 
+- [ ] validation
 
 update---------------------------
 add member
 update member
 delete member
-
 
 
 ### Messages REST API
@@ -30,3 +33,7 @@ delete member
 - [ ] update
 - [ ] delete 
 - [ ] buck-delete
+
+- [] validation
+
+

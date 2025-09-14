@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"testing"
 	"time"
 
@@ -22,19 +22,19 @@ func TestChatCreate(t *testing.T) {
 		Title: "Chat 24",
 		Members: []chat.Member{
 			{
-				UserID:   config.UserId,
+				UserID:   config.Mahdi,
 				IsActive: true,
 				Role:     "reza",
 				JoinedAt: time.Now(),
 			},
 			{
-				UserID:   "018f3a8b-1b32-729b-8f90-1234a5b6c7d8",
+				UserID:   config.Golnar,
 				IsActive: true,
 				Role:     "creator",
 				JoinedAt: time.Now(),
 			},
 			{
-				UserID:   "018f3a8b-1b32-729c-a1b2-9876a5b4c3d2",
+				UserID:   config.Ali,
 				IsActive: true,
 				Role:     "creator",
 				JoinedAt: time.Now(),
@@ -60,13 +60,13 @@ func TestChatCreate(t *testing.T) {
 	}
 }
 
-func TestRead(t *testing.T) {
+func TestChatRead(t *testing.T) {
 
 	var currentURL = baseURL + "chats"
 
 	queryParams := map[string]interface{}{
-		"userId": config.UserId,
-		"chatId": "018f3a8b-1b32-729a-f7e5-5467c1b2d3e4",
+		"userId": config.Mahdi,
+		"chatId": config.Varzesh3,
 	}
 
 	respBody, err := helpers.MakeRequest(t, "GET", currentURL, queryParams, nil)
@@ -83,12 +83,12 @@ func TestRead(t *testing.T) {
 
 }
 
-func TestReadAll(t *testing.T) {
+func TestChatReadAll(t *testing.T) {
 
 	var currentURL = baseURL + "chats"
 
 	queryParams := map[string]interface{}{
-		"userId":    config.UserId,
+		"userId":    config.Mahdi,
 		"offset":    2,
 		"limit":     100,
 		"sortBy":    "id",
@@ -106,4 +106,63 @@ func TestReadAll(t *testing.T) {
 	}
 
 	t.Logf("Retrieved %d chats", len(chats))
+}
+
+func TestChatUpdate(t *testing.T) {
+
+	var currentURL = baseURL + "chats"
+
+	requestChat := &chat.Chat{
+		ID:    config.ChatID,
+		Title: "Chat 24",
+		Members: []chat.Member{
+			{
+				UserID:   config.Mahdi,
+				IsActive: true,
+				Role:     "reza",
+				JoinedAt: time.Now(),
+			},
+			{
+				UserID:   config.Golnar,
+				IsActive: true,
+				Role:     "creator",
+				JoinedAt: time.Now(),
+			},
+			{
+				UserID:   config.Ali,
+				IsActive: true,
+				Role:     "creator",
+				JoinedAt: time.Now(),
+			},
+		},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Version:   1,
+	}
+
+	respBody, err := helpers.MakeRequest(t, "PATCH", currentURL, nil, requestChat)
+	if err != nil {
+		t.Errorf("update request failed: %v", err)
+	}
+
+	var createdChat chat.Chat
+	if err := json.Unmarshal(respBody, &createdChat); err != nil {
+		t.Errorf("unmarshaling response: %v", err)
+	}
+
+	if diff := cmp.Diff(createdChat.Title, createdChat.Title); diff != "" {
+		t.Errorf("Content mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestChatDelete(t *testing.T) {
+
+	var currentURL = baseURL + "chats/" + "0199357b-8352-7a0c-b168-4740fc60eb74"
+
+	respBody, err := helpers.MakeRequest(t, "DELETE", currentURL, nil, nil)
+	if err != nil {
+		t.Fatalf("Request failed: %v", err)
+	}
+
+	t.Logf("Deleted %d chat", respBody)
 }
