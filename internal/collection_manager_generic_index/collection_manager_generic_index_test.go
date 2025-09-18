@@ -1,0 +1,203 @@
+package collection_manager_generic_index
+
+import (
+	"fmt"
+	"strconv"
+	"testing"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/mahdi-cpp/messages-api/internal/collections/message"
+)
+
+// A place to store the created UUIDs for the read test
+//var createdUUIDs []uuid.UUID
+
+func TestCreateMessages(t *testing.T) {
+
+	db, err := New[*message.Message, *message.Index]()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	v7, err := uuid.NewV7()
+	if err != nil {
+		return
+	}
+
+	var count int
+	for i := 0; i < 5; i++ {
+		msg := &message.Message{
+			// DO NOT set the ID here. Let the Create function handle it.
+			Caption:  "caption of message number " + strconv.Itoa(i),
+			IsEdited: true,
+			IsPinned: true,
+			Medias: []*message.Media{
+				{
+					ID:          v7,
+					MimeType:    "image/jpeg",
+					Width:       1000,
+					Height:      1000,
+					Orientation: "portrait",
+				},
+				{
+					ID:          v7,
+					MimeType:    "video/mp4",
+					Width:       1000,
+					Height:      1000,
+					Orientation: "portrait",
+				},
+				{
+					ID:          v7,
+					MimeType:    "video/webm",
+					Width:       1000,
+					Height:      1000,
+					Orientation: "portrait",
+				},
+				{
+					ID:          v7,
+					MimeType:    "image/jpeg",
+					Width:       1000,
+					Height:      1000,
+					Orientation: "portrait",
+				},
+				{
+					ID:          v7,
+					MimeType:    "video/mp4",
+					Width:       1000,
+					Height:      1000,
+					Orientation: "portrait",
+				},
+				{
+					ID:          v7,
+					MimeType:    "video/webm",
+					Width:       1000,
+					Height:      1000,
+					Orientation: "portrait",
+				}, {
+					ID:          v7,
+					MimeType:    "video/mp4",
+					Width:       1000,
+					Height:      1000,
+					Orientation: "portrait",
+				},
+				{
+					ID:          v7,
+					MimeType:    "video/mp4",
+					Width:       1000,
+					Height:      1000,
+					Orientation: "portrait",
+				},
+			},
+			Voice: &message.Voice{
+				MimeType: "audio/opus",
+				Duration: 5000,
+				FileSize: 25000,
+			},
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		_, err := db.Create(msg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Store the new UUID returned by the Create function
+		//createdUUIDs = append(createdUUIDs, createdMsg.GetID())
+		count++
+	}
+
+	fmt.Printf("Created %d messages.\n", count)
+}
+
+func TestRead(t *testing.T) {
+
+	manager, err := New[*message.Message, *message.Index]()
+	if err != nil {
+		t.Fatalf("Failed to create manager: %v", err)
+	}
+	defer manager.Close()
+
+	all := manager.GetAllIndexEntries()
+
+	for _, entry := range all {
+		fmt.Println(entry.IndexData.Caption)
+		read, err := manager.Read(entry.IndexData.ID)
+		if err != nil {
+			return
+		}
+
+		read.Caption = "Ali"
+		_, err = manager.Update(read)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	fmt.Println(len(all))
+}
+
+func TestManagerOperations2(t *testing.T) {
+
+	// 2. ایجاد یک نمونه جدید از Manager
+	manager, err := New[*message.Message, *message.Index]()
+	if err != nil {
+		t.Fatalf("Failed to create manager: %v", err)
+	}
+	// اضافه کردن defer برای بستن manager در پایان اجرای تابع
+	defer manager.Close()
+
+	//v7, err := uuid.NewV7()
+	//if err != nil {
+	//	return
+	//}
+	//
+	//// 3. ایجاد یک پیام جدید با UUIDv7 (مطابق با درخواست شما)
+	//message1 := &message.Message{
+	//	ChatID:    v7,
+	//	UserID:    v7,
+	//	Caption:   "سلام، این یک پیام آزمایشی است.",
+	//	CreatedAt: time.Now(),
+	//}
+	//
+	//// 4. ذخیره پیام در کالکشن
+	//createdMessage, err := manager.Create(message1)
+	//if err != nil {
+	//	t.Fatalf("Failed to create message1: %v", err)
+	//}
+	//t.Logf("Message created with ID: %s", createdMessage.GetID())
+}
+
+func TestReadMessages(t *testing.T) {
+
+	//db, err := New[*message.Message, *message.Index]()
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
+	//defer db.Close()
+	//
+	//all := db.R
+	//fmt.Printf("Read %d messages.\n", len(all))
+	//fmt.Printf("Cpation: %s\n", all[0].String())
+	//if len(all) == 0 {
+	//	t.Fatal("No messages found")
+
+	//
+	//start := time.Now()
+	//
+	//for i := 3000000; i < 3001000; i++ {
+	//	id := all[i]
+	//	//fmt.Printf("id: %s \n", id.String())
+	//
+	//	msg, err := db.Read(id)
+	//	if err != nil {
+	//		t.Fatalf("Error reading message with UUID %s: %v", id, err)
+	//	}
+	//	fmt.Println(msg.Caption)
+	//}
+	//
+	//duration := time.Since(start)
+	//fmt.Println("single  read duration: ", duration)
+
+}

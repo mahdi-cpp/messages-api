@@ -73,7 +73,7 @@ func CreateChat(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param id path string true "Chat ID"
-// @Success 204 "No Content"
+// @Success 204 "No Caption"
 // @Failure 404 {object} map[string]string "Chat not found"
 // @Router /chats/{id} [delete]
 func DeleteChat(c *gin.Context) {

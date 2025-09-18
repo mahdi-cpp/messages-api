@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"github.com/goccy/go-json"
 	"testing"
 	"time"
+
+	"github.com/goccy/go-json"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
@@ -18,7 +19,7 @@ func TestChatCreate(t *testing.T) {
 	var currentURL = baseURL + "chats"
 
 	requestChat := &chat.Chat{
-		ID:    config.ChatID,
+		ID:    config.ChatID1,
 		Title: "Chat 24",
 		Members: []chat.Member{
 			{
@@ -42,7 +43,7 @@ func TestChatCreate(t *testing.T) {
 		},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		Version:   1,
+		Version:   "0",
 	}
 
 	respBody, err := helpers.MakeRequest(t, "POST", currentURL, nil, requestChat)
@@ -56,7 +57,7 @@ func TestChatCreate(t *testing.T) {
 	}
 
 	if diff := cmp.Diff(createdChat.Title, createdChat.Title); diff != "" {
-		t.Errorf("Content mismatch (-want +got):\n%s", diff)
+		t.Errorf("Caption mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -113,7 +114,7 @@ func TestChatUpdate(t *testing.T) {
 	var currentURL = baseURL + "chats"
 
 	requestChat := &chat.Chat{
-		ID:    config.ChatID,
+		ID:    config.ChatID1,
 		Title: "Chat 24",
 		Members: []chat.Member{
 			{
@@ -137,7 +138,7 @@ func TestChatUpdate(t *testing.T) {
 		},
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		Version:   1,
+		Version:   "1",
 	}
 
 	respBody, err := helpers.MakeRequest(t, "PATCH", currentURL, nil, requestChat)
@@ -151,7 +152,7 @@ func TestChatUpdate(t *testing.T) {
 	}
 
 	if diff := cmp.Diff(createdChat.Title, createdChat.Title); diff != "" {
-		t.Errorf("Content mismatch (-want +got):\n%s", diff)
+		t.Errorf("Caption mismatch (-want +got):\n%s", diff)
 	}
 }
 

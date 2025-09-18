@@ -85,7 +85,7 @@ func (m *AppManager) saveMessagesToFile() {
 			ID:        id,
 			UserID:    msg.UserID,
 			ChatID:    msg.ChatID,
-			Content:   msg.Content,
+			Caption:   msg.Content,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 			Version:   "1",

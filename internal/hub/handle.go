@@ -26,7 +26,7 @@ func (h *Hub) HandleClientMessage(client *Client, rawMessage []byte) {
 
 	switch message.Type {
 	case "message":
-		//h.HandleChatMessage(client, message.Content, message.ChatID)
+		//h.HandleChatMessage(client, message.Caption, message.ChatID)
 		h.handleForSave(client.UserID(), message.ChatID, message.Content)
 	case "typing":
 		h.HandleTypingIndicator(client, message.Content, message.ChatID)

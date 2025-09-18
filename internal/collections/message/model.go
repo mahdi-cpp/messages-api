@@ -9,11 +9,28 @@ import (
 func (a *Message) SetID(id uuid.UUID) { a.ID = id }
 func (a *Message) GetID() uuid.UUID   { return a.ID }
 
+func (i *Index) SetID(id uuid.UUID) { i.ID = id }
+func (i *Index) GetID() uuid.UUID   { return i.ID }
+
+// Index ساختاری برای نگهداری اطلاعات کلیدی و ایندکس‌گذاری است.
+type Index struct {
+	ID          uuid.UUID `json:"id" `
+	ChatID      uuid.UUID `json:"chatId" `
+	UserID      uuid.UUID `json:"userId" `
+	Caption     string    `json:"caption" `
+	IsEdited    bool      `json:"isEdited" `
+	IsPinned    bool      `json:"isPinned" `
+	IsDeleted   bool      `json:"isDeleted" `
+	MediaUnread bool      `json:"mediaUnread" `
+	CreatedAt   time.Time `json:"createdAt" `
+}
+
 type Message struct {
-	ID      uuid.UUID `json:"id"`
-	ChatID  uuid.UUID `json:"chatId"`
-	UserID  uuid.UUID `json:"userId"`
-	Content string    `json:"content"`
+	ID        uuid.UUID `json:"id" index:"true"`
+	ChatID    uuid.UUID `json:"chatId" index:"true"`
+	UserID    uuid.UUID `json:"userId" index:"true"`
+	Caption   string    `json:"caption" index:"true"`
+	Directory string    `json:"directory"`
 
 	// Data types
 	AssetType string    `json:"assetType"`
@@ -30,15 +47,15 @@ type Message struct {
 	ForwardedFrom    *ForwardInfo `json:"forwardedFrom,omitempty"`
 	Entities         []Entity     `json:"entities,omitempty"`
 	Views            int          `json:"views,omitempty"`
-	Reactions        []Reaction   `json:"reactions,omitempty"`
-	IsEdited         bool         `json:"isEdited,omitempty"`
-	IsPinned         bool         `json:"isPinned,omitempty"`
-	IsDeleted        bool         `json:"isDeleted,omitempty"`
-	MediaUnread      bool         `json:"mediaUnread"`
-	Silent           bool         `json:"silent,omitempty"`
+	Reactions        []Reaction   `json:"reactions"`
+	IsEdited         bool         `json:"isEdited" index:"true" `
+	IsPinned         bool         `json:"isPinned" index:"true"`
+	IsDeleted        bool         `json:"isDeleted" index:"true" `
+	MediaUnread      bool         `json:"mediaUnread" `
+	Silent           bool         `json:"silent"`
 
 	// Timestamps and metadata
-	CreatedAt     time.Time `json:"createdAt"`
+	CreatedAt     time.Time `json:"createdAt" index:"true" `
 	UpdatedAt     time.Time `json:"updatedAt"`
 	DeletedAt     time.Time `json:"deletedAt,omitempty"`
 	EncryptionKey string    `json:"encryptionKey,omitempty"`
@@ -48,16 +65,19 @@ type Message struct {
 //--- Data Types
 
 type Media struct {
-	ID       uuid.UUID `json:"id"`
-	FileSize int64     `json:"fileSize"`
-	Width    int       `json:"width"`
-	Height   int       `json:"height"`
-	MimeType string    `json:"mimeType"`
-	Duration int       `json:"duration"`
+	ID          uuid.UUID `json:"id"`
+	FileSize    int       `json:"fileSize"`
+	MimeType    string    `json:"mimeType"`
+	Duration    int       `json:"duration,omitempty"`
+	Width       int       `json:"width"`
+	Height      int       `json:"height"`
+	Orientation string    `json:"orientation"`
 }
 
 type Music struct {
 	ID       uuid.UUID `json:"id"`
+	Artist   string    `json:"artist"`
+	Album    string    `json:"album"`
 	FileSize int64     `json:"fileSize"`
 	MimeType string    `json:"mimeType"`
 	Duration int       `json:"duration"`

@@ -1,0 +1,42 @@
+{
+  "id": "d6cf8f61-97d0-4245-a5fc-90e27612afec",
+  "chatId": "476f62b5-2737-4cfd-a6dc-cfa8a200f473",
+  "userId": "f883f7a1-65f3-4c0e-9c71-4e5624b074d3",
+  "content": "test content",
+  "assetType": "",
+  "medias": [
+    {
+      "id": "e02d10a0-5501-4dd9-8da4-11c67db95990",
+      "fileSize": 470000,
+      "mimeType": "image/jpeg",
+      "width": 100,
+      "height": 200,
+      "orientation": 1
+    },
+    {
+      "id": "cc6067a2-66c9-4cbf-aedc-d92eb28b18c8",
+      "fileSize": 1230000,
+      "mimeType": "video/mp4",
+      "duration": 3700000,
+      "width": 100,
+      "height": 200,
+      "orientation": 6
+    }
+  ],
+  "music": {
+    "id": "cff8b382-9d1f-41fe-996d-f79a3d4712b3",
+    "fileSize": 80000,
+    "mimeType": "audio/mpeg",
+    "duration": 12
+  },
+  "reactions": null,
+  "isEdited": false,
+  "isPinned": false,
+  "isDeleted": false,
+  "mediaUnread": false,
+  "silent": false,
+  "createdAt": "0001-01-01T00:00:00Z",
+  "updatedAt": "0001-01-01T00:00:00Z",
+  "deletedAt": "0001-01-01T00:00:00Z",
+  "version": "1"
+}

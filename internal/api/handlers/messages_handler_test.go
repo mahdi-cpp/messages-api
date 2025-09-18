@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"github.com/goccy/go-json"
 	"testing"
 	"time"
+
+	"github.com/goccy/go-json"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/mahdi-cpp/messages-api/internal/collections/message"
@@ -16,14 +17,12 @@ func TestMessageCreate(t *testing.T) {
 	var currentURL = baseURL + "messages"
 
 	testMessage := &message.Message{
-		MessageType: "message",
-		Width:       450,
-		UserID:      config.Mahdi,
-		ChatID:      config.ChatID,
-		Content:     "Test Message 1001",
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		Version:     "1",
+		UserID:    config.Mahdi,
+		ChatID:    config.ChatID1,
+		Caption:   "Test Message 1001",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Version:   "1",
 	}
 
 	respBody, err := helpers.MakeRequest(t, "POST", currentURL, nil, testMessage)
@@ -37,8 +36,8 @@ func TestMessageCreate(t *testing.T) {
 	}
 
 	t.Logf("Created message ID: %s", createdMessage.ID)
-	if diff := cmp.Diff(testMessage.Content, createdMessage.Content); diff != "" {
-		t.Errorf("Content mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(testMessage.Caption, createdMessage.Caption); diff != "" {
+		t.Errorf("Caption mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -46,9 +45,11 @@ func TestMessageRead(t *testing.T) {
 
 	var currentURL = baseURL + "messages"
 
+	config.Init()
+
 	queryParams := map[string]interface{}{
 		"userId":    config.Mahdi,
-		"chatId":    config.ChatID,
+		"chatId":    config.ChatID1,
 		"messageId": config.MessageID,
 	}
 	respBody, err := helpers.MakeRequest(t, "GET", currentURL, queryParams, nil)
@@ -61,7 +62,7 @@ func TestMessageRead(t *testing.T) {
 		t.Fatalf("Unmarshaling failed: %v", err)
 	}
 
-	t.Logf("Retrieved %s", messages.Content)
+	t.Logf("Retrieved %s", messages.Caption)
 }
 
 func TestMessageReadAll(t *testing.T) {
@@ -70,7 +71,7 @@ func TestMessageReadAll(t *testing.T) {
 
 	queryParams := map[string]interface{}{
 		"userId":    config.Mahdi,
-		"chatId":    config.ChatID,
+		"chatId":    config.ChatID1,
 		"offset":    0,
 		"limit":     100,
 		"sortBy":    "id",
@@ -98,11 +99,10 @@ func TestMessageUpdate(t *testing.T) {
 	var text = "Golnar Message 1010"
 
 	testMessage := &message.UpdateOptions{
-		MessageType: "message",
-		UserID:      config.Mahdi,
-		ChatID:      config.ChatID,
-		MessageID:   config.MessageID,
-		Content:     text,
+		UserID:    config.Mahdi,
+		ChatID:    config.ChatID1,
+		MessageID: config.MessageID,
+		Content:   text,
 	}
 
 	respBody, err := helpers.MakeRequest(t, "PATCH", currentURL, nil, testMessage)
@@ -115,8 +115,8 @@ func TestMessageUpdate(t *testing.T) {
 		t.Errorf("unmarshaling response: %v", err)
 	}
 
-	if diff := cmp.Diff(updatedMessage.Content, text); diff != "" {
-		t.Errorf("Content mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(updatedMessage.Caption, text); diff != "" {
+		t.Errorf("Caption mismatch (-want +got):\n%s", diff)
 	}
 
 	duration := time.Since(start)

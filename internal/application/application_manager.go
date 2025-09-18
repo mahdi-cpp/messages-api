@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/mahdi-cpp/iris-tools/image_loader"
 	"github.com/mahdi-cpp/messages-api/internal/chat_manager"
-	"github.com/mahdi-cpp/messages-api/internal/collection_manager_gemini_v2"
+	"github.com/mahdi-cpp/messages-api/internal/collection_manager"
 	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
 	"github.com/mahdi-cpp/messages-api/internal/collections/message"
 	"github.com/mahdi-cpp/messages-api/internal/config"
@@ -30,7 +30,7 @@ var upgrader = websocket.Upgrader{
 type AppManager struct {
 	mu                    sync.RWMutex
 	usersStatus           map[string]*UserStatusData //key is userID
-	ChatCollectionManager *collection_manager_gemini_v2.Manager[*chat.Chat]
+	ChatCollectionManager *collection_manager.Manager[*chat.Chat]
 	chatManagers          map[uuid.UUID]*chat_manager.Manager // Maps chatIDs to their Manager
 	hub                   *hub.Hub
 	iconLoader            *image_loader.ImageLoader
@@ -67,8 +67,8 @@ func NewApplicationManager() (*AppManager, error) {
 	fmt.Printf("Initial Alloc: %d B\n", m1.Alloc)
 
 	var err error
-	var chatsDirectory = config.GetPath("chats_test3")
-	manager.ChatCollectionManager, err = collection_manager_gemini_v2.New[*chat.Chat](chatsDirectory)
+	var chatsDirectory = config.GetPath("test/chats")
+	manager.ChatCollectionManager, err = collection_manager.New[*chat.Chat](chatsDirectory)
 	if err != nil {
 		panic(err)
 	}
@@ -79,7 +79,7 @@ func NewApplicationManager() (*AppManager, error) {
 	fmt.Printf("Final Alloc: %d B\n", m2.Alloc)
 	fmt.Printf("Map increased memory usage by: %d B\n", m2.Alloc-m1.Alloc)
 
-	_, err = manager.GetChatManager(config.ChatID)
+	_, err = manager.GetChatManager(config.ChatID1)
 	if err != nil {
 		fmt.Println(err)
 	}

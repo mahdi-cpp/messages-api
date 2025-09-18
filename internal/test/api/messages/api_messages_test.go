@@ -37,7 +37,7 @@ func createMessage(newChat *message.Message) (*message.Message, error) {
 		return nil, fmt.Errorf("failed to create POST request: %w", err)
 	}
 
-	// 5. Set the Content-Type header on the request object.
+	// 5. Set the Caption-Type header on the request object.
 	req.Header.Set("Content-Type", "application/json")
 
 	// 6. Use an http.Client to send the request.
@@ -84,8 +84,8 @@ func TestCreate(t *testing.T) {
 		MessageType: "message",
 		Width:       450,
 		UserID:      config.Mahdi,
-		ChatID:      config.ChatID,
-		Content:     "Test Message",
+		ChatID:      config.ChatID1,
+		Caption:     "Test Message",
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 		Version:     "1",
@@ -98,7 +98,7 @@ func TestCreate(t *testing.T) {
 	}
 
 	// 3. Use cmp.Equal to perform a deep comparison of all fields.
-	if !cmp.Equal(sendMessage.Content, getMessage.Content) {
+	if !cmp.Equal(sendMessage.Caption, getMessage.Caption) {
 		// If the structs are not equal, use cmp.Diff to get a human-readable
 		// diff showing exactly which fields differ.
 		t.Errorf("GetDefaultUser() returned an unexpected message.\nDiff:\n%s", cmp.Diff(sendMessage, getMessage))

@@ -40,7 +40,7 @@ func createChat(newChat chat.Chat) error {
 		return err
 	}
 
-	// 5. Set the Content-Type header on the request object.
+	// 5. Set the Caption-Type header on the request object.
 	req.Header.Set("Content-Type", "application/json")
 
 	// 6. Use an http.Client to send the request.

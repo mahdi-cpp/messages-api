@@ -48,7 +48,7 @@ func NewHub(messages chan *Message) *Hub {
 	}
 
 	// create default chat
-	hub.CreateChat(config.ChatID, "Admin Chat")
+	hub.CreateChat(config.ChatID1, "Admin Chat")
 
 	return hub
 }

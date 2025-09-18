@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/uuid"
-	"github.com/mahdi-cpp/messages-api/internal/collection_manager_gemini"
+	"github.com/mahdi-cpp/messages-api/internal/collection_manager"
 	"github.com/mahdi-cpp/messages-api/internal/collections/chat"
 	"github.com/mahdi-cpp/messages-api/internal/collections/message"
 )
@@ -17,7 +17,7 @@ const (
 
 type Manager struct {
 	chat     *chat.Chat
-	Messages *collection_manager_gemini.Manager[*message.Message]
+	Messages *collection_manager.Manager[*message.Message]
 }
 
 func New(chat *chat.Chat) (*Manager, error) {
@@ -30,7 +30,7 @@ func New(chat *chat.Chat) (*Manager, error) {
 	// In this layer, we still initialize the collection manager without a context.
 	// The timeout for initial loading can be handled internally by the New function itself.
 	var messagesDir = filepath.Join(root, chat.ID.String(), chatMessage)
-	manager.Messages, err = collection_manager_gemini.New[*message.Message](messagesDir)
+	manager.Messages, err = collection_manager.New[*message.Message](messagesDir)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing chat message manager: %w", err)
 	}

@@ -38,7 +38,7 @@ func init() {
 	// Configure scalar field updates
 	metadataUpdater.AddScalarUpdater(func(a *Message, u UpdateOptions) {
 		if u.Content != "" {
-			a.Content = u.Content
+			a.Caption = u.Content
 		}
 	})
 

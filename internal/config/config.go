@@ -8,8 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const rootDir = "/app/iris/"
-const applicationDir = "com.iris.messages"
+const RootDir = "/app/iris/com.iris.messages"
 const usersDir = "users"
 
 var (
@@ -23,7 +22,9 @@ var (
 	Varzesh3 uuid.UUID
 )
 var (
-	ChatID    uuid.UUID
+	ChatID1   uuid.UUID
+	ChatID2   uuid.UUID
+	ChatID3   uuid.UUID
 	MessageID uuid.UUID
 )
 
@@ -72,9 +73,19 @@ func Init() {
 
 	initUsers()
 
-	ChatID, err = uuid.Parse("018f3a8b-1b32-7295-a2c7-87654b4d4567")
+	ChatID1, err = uuid.Parse("018f3a8b-1b32-7295-a2c7-87654b4d4567")
 	if err != nil {
-		log.Fatalf("failed to parse ChatID: %v", err)
+		log.Fatalf("failed to parse ChatID1: %v", err)
+	}
+
+	ChatID2, err = uuid.Parse("01992ecc-bb15-7ba6-b340-cc0366eee30a")
+	if err != nil {
+		log.Fatalf("failed to parse ChatID1: %v", err)
+	}
+
+	ChatID3, err = uuid.Parse("01992530-c81c-7d64-ac4f-a4f29678cfc0")
+	if err != nil {
+		log.Fatalf("failed to parse ChatID1: %v", err)
 	}
 
 	MessageID, err = uuid.Parse("01991bc4-faad-7b70-aedc-f20ea4146898")
@@ -84,11 +95,11 @@ func Init() {
 }
 
 func GetPath(file string) string {
-	return filepath.Join(rootDir, applicationDir, file)
+	return filepath.Join(RootDir, file)
 }
 
 func GetUserPath(phone string, file string) string {
-	pp := filepath.Join(rootDir, applicationDir, usersDir, phone, file)
+	pp := filepath.Join(RootDir, usersDir, phone, file)
 	fmt.Println(pp)
 	return pp
 }

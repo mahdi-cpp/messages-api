@@ -60,7 +60,7 @@ func BuildMessageCriteria(with *SearchOptions) search.Criteria[*Message] {
 		if with.MessageID != uuid.Nil && c.ID != with.MessageID {
 			return false
 		}
-		if with.Content != "" && c.Content != with.Content {
+		if with.Content != "" && c.Caption != with.Content {
 			return false
 		}
 

@@ -1,4 +1,4 @@
-package collection_manager_gemini_v2
+package collection_manager
 
 import (
 	"errors"

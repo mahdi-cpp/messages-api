@@ -59,7 +59,7 @@ func NewChatClient(config1 ClientChatConfig) (*ChatClient, error) {
 		errorChan:   make(chan error, 10),
 		closeChan:   make(chan struct{}),
 		chats:       make(map[uuid.UUID]bool),
-		currentChat: config.ChatID,
+		currentChat: config.ChatID1,
 	}, nil
 }
 
@@ -98,7 +98,7 @@ func (c *ChatClient) Connect() error {
 	go c.handleMessages()
 
 	// Join default chat
-	if err := c.JoinChat(config.ChatID); err != nil {
+	if err := c.JoinChat(config.ChatID1); err != nil {
 		return err
 	}
 
@@ -153,9 +153,9 @@ func (c *ChatClient) handleMessage(msg message.Message) {
 
 	switch msg.MessageType {
 	case "message":
-		log.Printf("{ChatID:%s} %s: %s", msg.ChatID, msg.UserID, msg.Content)
+		log.Printf("{ChatID1:%s} %s: %s", msg.ChatID, msg.UserID, msg.Caption)
 	case "system":
-		log.Printf("SYSTEM: %s", msg.Content)
+		log.Printf("SYSTEM: %s", msg.Caption)
 	case "user_joined":
 		log.Printf("-> %s joined the chat", msg.UserID)
 	case "user_left":
@@ -167,7 +167,7 @@ func (c *ChatClient) handleMessage(msg message.Message) {
 	case "chat_joined":
 		log.Printf("Joined chat: %s", msg.ChatID)
 	case "chat_list":
-		//if chats, ok := msg.Content.(map[string]interface{}); ok {
+		//if chats, ok := msg.Caption.(map[string]interface{}); ok {
 		//	log.Printf("Available chats: %v", chats)
 		//}
 	case "error":
@@ -185,7 +185,7 @@ func (c *ChatClient) SendMessage(content string) error {
 
 	message1 := message.Message{
 		MessageType: "message",
-		Content:     content,
+		Caption:     content,
 		ChatID:      c.currentChat,
 		UserID:      c.userID,
 		CreatedAt:   time.Now(),
@@ -238,7 +238,7 @@ func (c *ChatClient) LeaveChat(chatID uuid.UUID) error {
 	c.mutex.Lock()
 	delete(c.chats, chatID)
 	if c.currentChat == chatID {
-		c.currentChat = config.ChatID
+		c.currentChat = config.ChatID1
 	}
 	c.mutex.Unlock()
 
@@ -262,7 +262,7 @@ func (c *ChatClient) CreateChat(chatName string) error {
 	message1 := message.Message{
 		MessageType: "create_chat",
 		ChatID:      chatID,
-		Content:     chatName,
+		Caption:     chatName,
 		UserID:      c.userID,
 	}
 
@@ -308,7 +308,7 @@ func (c *ChatClient) SendTypingIndicator(typing bool) error {
 		MessageType: "typing",
 		ChatID:      c.currentChat,
 		UserID:      c.userID,
-		Content:     fmt.Sprintf("%t", typing),
+		Caption:     fmt.Sprintf("%t", typing),
 	}
 
 	return c.sendJSON(message1)
