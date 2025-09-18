@@ -17,7 +17,7 @@ import (
 
 const (
 	recordStatusSize = 1
-	recordSize       = 2048
+	recordSize       = 4096
 	indexRecordSize  = 400
 	dirName          = "/app/tmp/messages"
 )
@@ -33,12 +33,13 @@ type collectionItem interface {
 }
 
 type IndexEntry[I any] struct {
-	Offset      int64 // موقعیت داده در فایل داده
-	IndexOffset int64 // موقعیت رکورد ایندکس در فایل ایندکس
+	Offset      int64
+	IndexOffset int64
 	IndexData   I
 }
 
-type FileHandler[I any] struct {
+// FileHandler now is not generic, as it handles raw bytes
+type FileHandler struct {
 	dataFile  *os.File
 	indexFile *os.File
 	mu        sync.RWMutex
@@ -46,7 +47,7 @@ type FileHandler[I any] struct {
 	indexPath string
 }
 
-func NewFileHandler[I any]() (*FileHandler[I], error) {
+func NewFileHandler() (*FileHandler, error) {
 
 	if err := os.MkdirAll(dirName, os.ModePerm); err != nil {
 		return nil, fmt.Errorf("error creating directory %s: %w", dirName, err)
@@ -66,7 +67,7 @@ func NewFileHandler[I any]() (*FileHandler[I], error) {
 		return nil, fmt.Errorf("error opening index file: %w", err)
 	}
 
-	return &FileHandler[I]{
+	return &FileHandler{
 		dataFile:  dataFile,
 		indexFile: indexFile,
 		dataPath:  dataFileName,
@@ -74,7 +75,7 @@ func NewFileHandler[I any]() (*FileHandler[I], error) {
 	}, nil
 }
 
-func (h *FileHandler[I]) Close() error {
+func (h *FileHandler) Close() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -93,7 +94,7 @@ func (h *FileHandler[I]) Close() error {
 	return nil
 }
 
-func (h *FileHandler[I]) WriteRecord(data []byte) (int64, error) {
+func (h *FileHandler) WriteRecord(data []byte) (int64, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -117,7 +118,7 @@ func (h *FileHandler[I]) WriteRecord(data []byte) (int64, error) {
 	return offset, nil
 }
 
-func (h *FileHandler[I]) ReadRecord(offset int64) ([]byte, error) {
+func (h *FileHandler) ReadRecord(offset int64) ([]byte, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -149,7 +150,7 @@ func (h *FileHandler[I]) ReadRecord(offset int64) ([]byte, error) {
 	return recordBuffer[recordStatusSize : recordStatusSize+dataLength], nil
 }
 
-func (h *FileHandler[I]) UpdateRecord(offset int64, data []byte) error {
+func (h *FileHandler) UpdateRecord(offset int64, data []byte) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -168,7 +169,7 @@ func (h *FileHandler[I]) UpdateRecord(offset int64, data []byte) error {
 	return nil
 }
 
-func (h *FileHandler[I]) DeleteRecord(offset int64) error {
+func (h *FileHandler) DeleteRecord(offset int64) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -178,7 +179,7 @@ func (h *FileHandler[I]) DeleteRecord(offset int64) error {
 	return nil
 }
 
-func (h *FileHandler[I]) WriteIndexRecord(id uuid.UUID, offset int64, indexData []byte) (int64, error) {
+func (h *FileHandler) WriteIndexRecord(id uuid.UUID, offset int64, indexData []byte) (int64, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -204,7 +205,7 @@ func (h *FileHandler[I]) WriteIndexRecord(id uuid.UUID, offset int64, indexData 
 	return position, nil
 }
 
-func (h *FileHandler[I]) UpdateIndexRecord(indexOffset int64, id uuid.UUID, offset int64, indexData []byte) error {
+func (h *FileHandler) UpdateIndexRecord(indexOffset int64, id uuid.UUID, offset int64, indexData []byte) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -212,7 +213,6 @@ func (h *FileHandler[I]) UpdateIndexRecord(indexOffset int64, id uuid.UUID, offs
 		return fmt.Errorf("index data size exceeds maximum allowed size")
 	}
 
-	// رفتن به موقعیت رکورد ایندکس
 	if _, err := h.indexFile.Seek(indexOffset, io.SeekStart); err != nil {
 		return fmt.Errorf("error seeking to index offset %d: %w", indexOffset, err)
 	}
@@ -230,87 +230,16 @@ func (h *FileHandler[I]) UpdateIndexRecord(indexOffset int64, id uuid.UUID, offs
 	return nil
 }
 
-func (h *FileHandler[I]) ReadAllIndexRecords() (map[uuid.UUID]IndexEntry[I], error) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-
-	result := make(map[uuid.UUID]IndexEntry[I])
-
-	// رفتن به ابتدای فایل ایندکس
-	if _, err := h.indexFile.Seek(0, io.SeekStart); err != nil {
-		return nil, fmt.Errorf("error seeking to start of index file: %w", err)
-	}
-
-	record := make([]byte, indexRecordSize)
-	currentOffset := int64(0)
-
-	for {
-		n, err := h.indexFile.Read(record)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, fmt.Errorf("error reading index record: %w", err)
-		}
-
-		if n < indexRecordSize {
-			break
-		}
-
-		// نادیده گرفتن رکوردهای خالی
-		if record[0] == 0 {
-			currentOffset += indexRecordSize
-			continue
-		}
-
-		// خواندن UUID
-		id, err := uuid.FromBytes(record[0:16])
-		if err != nil {
-			log.Printf("Error parsing UUID at offset %d: %v", currentOffset, err)
-			currentOffset += indexRecordSize
-			continue
-		}
-
-		// خواندن آفست داده
-		dataOffset := int64(binary.LittleEndian.Uint64(record[16:24]))
-
-		// خواندن اندازه داده
-		dataSize := binary.LittleEndian.Uint16(record[24:26])
-
-		// خواندن داده
-		data := make([]byte, dataSize)
-		copy(data, record[26:26+dataSize])
-
-		// Unmarshal داده ایندکس
-		var indexData I
-		if err := json.Unmarshal(data, &indexData); err != nil {
-			log.Printf("Error unmarshaling index data for ID %s at offset %d: %v", id, currentOffset, err)
-			currentOffset += indexRecordSize
-			continue
-		}
-
-		// اضافه کردن به نتیجه
-		result[id] = IndexEntry[I]{
-			Offset:      dataOffset,
-			IndexOffset: currentOffset,
-			IndexData:   indexData,
-		}
-
-		currentOffset += indexRecordSize
-	}
-
-	return result, nil
-}
-
+// Manager is now responsible for handling generic types and file handler
 type Manager[T collectionItem, I collectionItem] struct {
-	fh           *FileHandler[I]
+	fh           *FileHandler
 	mu           sync.RWMutex
 	primaryIndex map[uuid.UUID]IndexEntry[I]
 	closed       bool
 }
 
 func New[T collectionItem, I collectionItem]() (*Manager[T, I], error) {
-	fh, err := NewFileHandler[I]()
+	fh, err := NewFileHandler()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file handler: %w", err)
 	}
@@ -339,15 +268,12 @@ func (m *Manager[T, I]) Close() error {
 	return m.fh.Close()
 }
 
-// loadPrimaryIndex ایندکس اصلی را از دیسک بارگذاری می‌کند
 func (m *Manager[T, I]) loadPrimaryIndex() error {
-	// بررسی وجود فایل ایندکس
 	if _, err := os.Stat(filepath.Join(dirName, "index.db")); os.IsNotExist(err) {
 		return m.rebuildIndex()
 	}
 
-	// خواندن تمام رکوردهای ایندکس
-	indexMap, err := m.fh.ReadAllIndexRecords()
+	indexMap, err := m.readAllIndexRecords()
 	if err != nil {
 		return fmt.Errorf("error reading index records: %w", err)
 	}
@@ -356,11 +282,73 @@ func (m *Manager[T, I]) loadPrimaryIndex() error {
 		return m.rebuildIndex()
 	}
 
-	// اختصاص مستقیم ایندکس خوانده شده
 	m.primaryIndex = indexMap
 
 	log.Printf("Loaded %d entries from primary index", len(m.primaryIndex))
 	return nil
+}
+
+// readAllIndexRecords is now a method of Manager to handle generics
+func (m *Manager[T, I]) readAllIndexRecords() (map[uuid.UUID]IndexEntry[I], error) {
+	m.fh.mu.RLock()
+	defer m.fh.mu.RUnlock()
+
+	result := make(map[uuid.UUID]IndexEntry[I])
+
+	if _, err := m.fh.indexFile.Seek(0, io.SeekStart); err != nil {
+		return nil, fmt.Errorf("error seeking to start of index file: %w", err)
+	}
+
+	record := make([]byte, indexRecordSize)
+	currentOffset := int64(0)
+
+	for {
+		n, err := m.fh.indexFile.Read(record)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, fmt.Errorf("error reading index record: %w", err)
+		}
+
+		if n < indexRecordSize {
+			break
+		}
+
+		if record[0] == 0 {
+			currentOffset += indexRecordSize
+			continue
+		}
+
+		id, err := uuid.FromBytes(record[0:16])
+		if err != nil {
+			log.Printf("Error parsing UUID at offset %d: %v", currentOffset, err)
+			currentOffset += indexRecordSize
+			continue
+		}
+
+		dataOffset := int64(binary.LittleEndian.Uint64(record[16:24]))
+		dataSize := binary.LittleEndian.Uint16(record[24:26])
+		data := make([]byte, dataSize)
+		copy(data, record[26:26+dataSize])
+
+		var indexData I
+		if err := json.Unmarshal(data, &indexData); err != nil {
+			log.Printf("Error unmarshaling index data for ID %s at offset %d: %v", id, currentOffset, err)
+			currentOffset += indexRecordSize
+			continue
+		}
+
+		result[id] = IndexEntry[I]{
+			Offset:      dataOffset,
+			IndexOffset: currentOffset,
+			IndexData:   indexData,
+		}
+
+		currentOffset += indexRecordSize
+	}
+
+	return result, nil
 }
 
 func (m *Manager[T, I]) rebuildIndex() error {
@@ -376,7 +364,6 @@ func (m *Manager[T, I]) rebuildIndex() error {
 		return nil
 	}
 
-	// پاک کردن فایل ایندکس قبل از بازسازی
 	if err := m.fh.indexFile.Truncate(0); err != nil {
 		return fmt.Errorf("error truncating index file: %w", err)
 	}
@@ -431,7 +418,6 @@ func (m *Manager[T, I]) rebuildIndex() error {
 				continue
 			}
 
-			// نوشتن رکورد ایندکس و دریافت موقعیت آن
 			indexOffset, err := m.fh.WriteIndexRecord(id, offset, indexData)
 			if err != nil {
 				log.Printf("Error writing index record for ID %s: %v", id, err)
@@ -561,7 +547,6 @@ func (m *Manager[T, I]) Create(item T) (T, error) {
 		return zero, fmt.Errorf("failed to marshal index item: %w", err)
 	}
 
-	// نوشتن رکورد ایندکس و دریافت موقعیت آن
 	indexOffset, err := m.fh.WriteIndexRecord(id, offset, indexData)
 	if err != nil {
 		m.fh.DeleteRecord(offset)
@@ -607,7 +592,6 @@ func (m *Manager[T, I]) Update(item T) (T, error) {
 		return zero, fmt.Errorf("failed to marshal index item: %w", err)
 	}
 
-	// به‌روزرسانی رکورد ایندکس موجود به جای نوشتن رکورد جدید
 	if err := m.fh.UpdateIndexRecord(entry.IndexOffset, id, entry.Offset, indexData); err != nil {
 		return zero, fmt.Errorf("failed to update index record: %w", err)
 	}
@@ -634,7 +618,6 @@ func (m *Manager[T, I]) Delete(id uuid.UUID) error {
 		return err
 	}
 
-	// حذف رکورد ایندکس با نوشتن یک رکورد خالی
 	emptyRecord := make([]byte, indexRecordSize)
 	if _, err := m.fh.indexFile.WriteAt(emptyRecord, entry.IndexOffset); err != nil {
 		return fmt.Errorf("error deleting index record: %w", err)

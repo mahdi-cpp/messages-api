@@ -17,7 +17,6 @@ type Index struct {
 	ID          uuid.UUID `json:"id" `
 	ChatID      uuid.UUID `json:"chatId" `
 	UserID      uuid.UUID `json:"userId" `
-	Caption     string    `json:"caption" `
 	IsEdited    bool      `json:"isEdited" `
 	IsPinned    bool      `json:"isPinned" `
 	IsDeleted   bool      `json:"isDeleted" `
@@ -29,7 +28,7 @@ type Message struct {
 	ID        uuid.UUID `json:"id" index:"true"`
 	ChatID    uuid.UUID `json:"chatId" index:"true"`
 	UserID    uuid.UUID `json:"userId" index:"true"`
-	Caption   string    `json:"caption" index:"true"`
+	Caption   string    `json:"caption"`
 	Directory string    `json:"directory"`
 
 	// Data types
@@ -72,6 +71,14 @@ type Media struct {
 	Width       int       `json:"width"`
 	Height      int       `json:"height"`
 	Orientation string    `json:"orientation"`
+	Tags        []Tag     `json:"tags"`
+}
+
+type Tag struct {
+	ID       uuid.UUID `json:"id"`
+	Username string    `json:"username"`
+	X        int       `json:"x"`
+	Y        int       `json:"y"`
 }
 
 type Music struct {
